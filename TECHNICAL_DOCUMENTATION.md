@@ -26,20 +26,8 @@ PhantomBand is a client-side **Single Page Application (SPA)** built with **Reac
 
 ### 2.1. High-Level Diagram
 
-```
-+------------------+      (HTTPS Request)       +---------------------+
-|                  |  <---------------------->  |                     |
-|  React Client    |      (JSON Payload)        |  Google Gemini API  |
-| (Browser)        |                            | (gemini-2.5-flash)  |
-|                  |  ---------------------->   |                     |
-+------------------+      (JSON Response)       +---------------------+
-       |
-       | (User Interaction)
-       |
-+------+-----------+
-|      User        |
-+------------------+
-```
+<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/cc1e955b-3e2b-4185-af1c-d0ebf65fc872" />
+
 
 ### 2.2. Architectural Principles
 
