@@ -1,6 +1,5 @@
 
 # PhantomBand: Technical Documentation
-by: Ritvik Indupuri
 
 ## 1. Introduction
 
@@ -16,7 +15,8 @@ This documentation covers the following areas:
 -   Detailed Component Breakdown
 -   AI Integration and Prompt Engineering
 -   State Management Strategy
--   Styling and UI Philosophy
+-   UI/UX and Styling
+-   Future Enhancements
 
 ---
 
@@ -26,8 +26,20 @@ PhantomBand is a client-side **Single Page Application (SPA)** built with **Reac
 
 ### 2.1. High-Level Diagram
 
-<img width="1024" height="1024" alt="image" src="https://github.com/user-attachments/assets/cc1e955b-3e2b-4185-af1c-d0ebf65fc872" />
-
+```
++------------------+      (HTTPS Request)       +---------------------+
+|                  |  <---------------------->  |                     |
+|  React Client    |      (JSON Payload)        |  Google Gemini API  |
+| (Browser)        |                            | (gemini-2.5-flash)  |
+|                  |  ---------------------->   |                     |
++------------------+      (JSON Response)       +---------------------+
+       |
+       | (User Interaction)
+       |
++------+-----------+
+|      User        |
++------------------+
+```
 
 ### 2.2. Architectural Principles
 
@@ -150,3 +162,35 @@ The application employs a simple yet effective state management strategy using o
 -   **Props Drilling:** State is passed down to child components via props. For an application of this size, this is more straightforward than introducing a complex state management library like Redux or Zustand.
 -   **Lifting State Up:** Child components (`SimulationControls`, `FileUpload`) notify the parent of changes via callback functions passed as props (e.g., `onParamsChange`).
 -   **Component-Local State:** UI-specific state that doesn't affect the rest of the application is managed locally within the component itself. The prime example is `DataVisualizer`, which manages its own filter and appearance settings using `useState` and `localStorage`, making it a self-contained, reusable component.
+
+---
+
+## 7. UI/UX and Styling
+
+### 7.1. Design Philosophy
+The user interface is designed to evoke a "tactical command center" aesthetic. It utilizes a dark theme with high-contrast amber accents to create a professional, immersive environment that is easy on the eyes during long analysis sessions. The layout is clean and structured, prioritizing data clarity and ease of use.
+
+### 7.2. Technology
+-   **Tailwind CSS:** This utility-first CSS framework was chosen for its ability to enable rapid and consistent styling directly within the JSX. The configuration is defined inline in `index.html` for simplicity, which is well-suited for a single-page application of this scope.
+-   **Custom Global Styles:** A few targeted CSS rules are defined in the `<style>` block of `index.html`. These handle elements that are difficult to style with utility classes alone, such as the global scrollbar and the custom appearance of `input[type=range]` sliders, ensuring a cohesive look and feel across all components.
+-   **Fonts:** The application uses two primary fonts:
+    -   **Orbitron:** A display font used for headings and titles to give a futuristic, technical feel.
+    -   **Roboto Mono:** A monospaced font used for all body text, labels, and data readouts to ensure maximum clarity and readability.
+
+---
+
+## 8. Future Enhancements
+
+The current architecture provides a solid foundation for future expansion. Potential enhancements include:
+
+-   **Advanced AI Interaction:** Implement a chat-based interface where users can ask the AI follow-up questions about the generated scenario (e.g., "What would happen if I increased my signal power by 10dBm?").
+-   **Data Export:** Add functionality to export the generated `visualizerData` as a `.csv` file, allowing the synthetic data to be used in other external analysis tools.
+-   **Expanded Visualization Options:** Incorporate more sophisticated chart types, such as a waterfall display or a spectrogram, for deeper and more nuanced signal analysis.
+-   **Threat Template Library:** Allow users to save specific `simulationParams` configurations as named "threat templates" for quick recall and consistent reuse in training exercises.
+-   **Authentication & User Profiles:** For multi-user or enterprise environments, introduce user accounts to allow individuals to save and manage their own private session histories and template libraries.
+
+---
+
+## 9. Conclusion
+
+PhantomBand is a robust, interactive, and client-centric application that effectively leverages a powerful generative AI as a reliable service. Its architecture is intentionally designed for stability through structured API communication, interactivity via a responsive state management model, and maintainability through a clear component structure. This document provides the definitive technical blueprint for understanding, maintaining, and extending the capabilities of the PhantomBand system.
