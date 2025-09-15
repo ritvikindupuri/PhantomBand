@@ -6,6 +6,19 @@ export enum EnvironmentType {
   Airborne = 'Airborne',
 }
 
+export enum SignalPropagationModel {
+  FreeSpace = 'Free Space Path Loss',
+  Hata = 'Hata Model (Urban)',
+  LogDistance = 'Log-distance Path Loss',
+}
+
+export enum AtmosphericCondition {
+  Clear = 'Clear',
+  Rainy = 'Rainy',
+  Foggy = 'Foggy',
+  Snow = 'Snow',
+}
+
 export enum InterferenceLevel {
   Low = 'Low',
   Medium = 'Medium',
@@ -22,9 +35,14 @@ export enum DeceptionTarget {
   GENERATE_CUSTOM_SCENARIO = 'Generate Custom Scenario',
 }
 
+export interface EnvironmentParams {
+  type: EnvironmentType;
+  propagationModel: SignalPropagationModel;
+  atmosphericCondition: AtmosphericCondition;
+}
 
 export interface SimulationParams {
-  environment: EnvironmentType;
+  environment: EnvironmentParams;
   interference: InterferenceLevel;
   deceptionTarget: DeceptionTarget;
   timesteps: number;

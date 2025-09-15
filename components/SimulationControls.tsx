@@ -1,8 +1,8 @@
 import React from 'react';
 // Fix: Added .ts extension to module path.
-import type { SimulationParams } from '../types.ts';
+import type { SimulationParams, EnvironmentParams } from '../types.ts';
 // Fix: Added .ts extension to module path.
-import { EnvironmentType, InterferenceLevel, DeceptionTarget } from '../types.ts';
+import { EnvironmentType, InterferenceLevel, DeceptionTarget, SignalPropagationModel, AtmosphericCondition } from '../types.ts';
 
 interface SimulationControlsProps {
   params: SimulationParams;
@@ -34,13 +34,35 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({ params, 
     onParamsChange({ ...params, [field]: value });
   };
 
+  const handleEnvironmentChange = <T,>(field: keyof EnvironmentParams, value: T) => {
+    onParamsChange({
+      ...params,
+      environment: {
+        ...params.environment,
+        [field]: value
+      }
+    });
+  };
+
   return (
     <div className="space-y-4">
       <SelectControl
         label="Environment Type"
-        value={params.environment}
-        onChange={(e) => handleChange('environment', e.target.value as EnvironmentType)}
+        value={params.environment.type}
+        onChange={(e) => handleEnvironmentChange('type', e.target.value as EnvironmentType)}
         options={EnvironmentType}
+      />
+      <SelectControl
+        label="Signal Propagation Model"
+        value={params.environment.propagationModel}
+        onChange={(e) => handleEnvironmentChange('propagationModel', e.target.value as SignalPropagationModel)}
+        options={SignalPropagationModel}
+      />
+      <SelectControl
+        label="Atmospheric Conditions"
+        value={params.environment.atmosphericCondition}
+        onChange={(e) => handleEnvironmentChange('atmosphericCondition', e.target.value as AtmosphericCondition)}
+        options={AtmosphericCondition}
       />
       <SelectControl
         label="Interference Level"

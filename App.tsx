@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { FileUpload } from './components/FileUpload';
@@ -31,6 +30,28 @@ const useDebounce = <T,>(value: T, delay: number): T => {
   return debouncedValue;
 };
 
+// Typewriter effect hook
+const useTypewriter = (text: string, speed: number = 30) => {
+    const [displayText, setDisplayText] = useState('');
+
+    useEffect(() => {
+        setDisplayText(''); // Reset when text changes
+        if (text) {
+            let i = 0;
+            const timer = setInterval(() => {
+                setDisplayText(text.substring(0, i + 1));
+                i++;
+                if (i >= text.length) {
+                    clearInterval(timer);
+                }
+            }, speed);
+            return () => clearInterval(timer);
+        }
+    }, [text, speed]);
+
+    return displayText;
+};
+
 
 const App: React.FC = () => {
   const [simulationParams, setSimulationParams] = useState<SimulationParams>(INITIAL_SIMULATION_PARAMS);
@@ -44,11 +65,14 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('config');
   const [currentTimestep, setCurrentTimestep] = useState(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-
+  
   const debouncedParams = useDebounce(simulationParams, 750);
   const isInitialMount = useRef(true);
-  // Fix: Initialize useRef with an argument as required by the error, and update the type.
   const lastUpdatedParams = useRef<string | undefined>(undefined);
+  
+  const displayedScenario = useTypewriter(analysisResult?.scenario ?? '', 10);
+  const isTyping = analysisResult?.scenario ? displayedScenario.length < analysisResult.scenario.length : false;
+
 
   const handleFileChange = (file: File | null) => {
     setUploadedFile(file);
@@ -72,25 +96,33 @@ const App: React.FC = () => {
 
     try {
       const result = await generateDeceptionScenario(simulationParams, uploadedFile, fileContent);
+
+      if (result.scenario.startsWith('**Error:')) {
+          setError(result.scenario);
+          setAnalysisResult({
+              scenario: result.scenario,
+              visualizerData: [[]]
+          });
+          return;
+      }
+      
       setAnalysisResult(result);
 
-      if (!result.scenario.startsWith('**Error:')) {
-          const newHistoryItem: HistoryItem = {
-            id: new Date().toISOString(),
-            timestamp: new Date().toLocaleString(),
-            params: simulationParams,
-            file: uploadedFile ? { name: uploadedFile.name, content: fileContent || '' } : undefined,
-            ...result,
-          };
-          setHistory(prevHistory => [newHistoryItem, ...prevHistory]);
-          if (result.visualizerData.length > 1) {
-            setIsPlaying(true);
-          }
-      } else {
-        setError("Failed to generate a valid scenario. Please check the API response.");
+      const newHistoryItem: HistoryItem = {
+        id: new Date().toISOString(),
+        timestamp: new Date().toLocaleString(),
+        params: simulationParams,
+        file: uploadedFile ? { name: uploadedFile.name, content: fileContent || '' } : undefined,
+        ...result,
+      };
+      setHistory(prevHistory => [newHistoryItem, ...prevHistory]);
+      
+      if (result.visualizerData.length > 1) {
+        setIsPlaying(true);
       }
+
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred during the analysis.';
       setError(errorMessage);
       setAnalysisResult({
           scenario: `**An Error Occurred:**\n\n${errorMessage}`,
@@ -102,12 +134,12 @@ const App: React.FC = () => {
   }, [simulationParams, uploadedFile, fileContent]);
 
   const handleLiveUpdate = useCallback(async (paramsToUpdate: SimulationParams) => {
-      if (!analysisResult) return; // Should not happen due to guard in useEffect
+      if (!analysisResult) return;
 
       setIsUpdating(true);
       setError(null);
       const wasPlaying = isPlaying;
-      setIsPlaying(false); // Pause during update
+      setIsPlaying(false);
 
       try {
           const result = await generateDeceptionScenario(
@@ -118,23 +150,24 @@ const App: React.FC = () => {
               analysisResult.scenario
           );
 
-          setAnalysisResult(result);
-          setCurrentTimestep(0); // Reset to show the new simulation from the start
+          if (result.scenario.startsWith('**Error:')) {
+              setError(result.scenario);
+              return;
+          }
 
-          if (!result.scenario.startsWith('**Error:')) {
-              const newHistoryItem: HistoryItem = {
-                  id: new Date().toISOString(),
-                  timestamp: new Date().toLocaleString(),
-                  params: paramsToUpdate,
-                  file: uploadedFile ? { name: uploadedFile.name, content: fileContent || '' } : undefined,
-                  ...result,
-              };
-              setHistory(prevHistory => [newHistoryItem, ...prevHistory]);
-              if (result.visualizerData.length > 1 && wasPlaying) {
-                  setIsPlaying(true); // Resume playing if it was playing before
-              }
-          } else {
-              setError("Failed to generate a valid scenario update.");
+          setAnalysisResult(result);
+          setCurrentTimestep(0);
+
+          const newHistoryItem: HistoryItem = {
+              id: new Date().toISOString(),
+              timestamp: new Date().toLocaleString(),
+              params: paramsToUpdate,
+              file: uploadedFile ? { name: uploadedFile.name, content: fileContent || '' } : undefined,
+              ...result,
+          };
+          setHistory(prevHistory => [newHistoryItem, ...prevHistory]);
+          if (result.visualizerData.length > 1 && wasPlaying) {
+              setIsPlaying(true);
           }
       } catch (e) {
           const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
@@ -164,7 +197,7 @@ const App: React.FC = () => {
   // Effect for playback animation
   useEffect(() => {
     let timer: number;
-    if (isPlaying && analysisResult && currentTimestep < analysisResult.visualizerData.length - 1) {
+    if (isPlaying && analysisResult && !isTyping && currentTimestep < analysisResult.visualizerData.length - 1) {
       timer = window.setInterval(() => {
         setCurrentTimestep(prev => prev + 1);
       }, 800);
@@ -172,7 +205,7 @@ const App: React.FC = () => {
       setIsPlaying(false);
     }
     return () => window.clearInterval(timer);
-  }, [isPlaying, currentTimestep, analysisResult]);
+  }, [isPlaying, currentTimestep, analysisResult, isTyping]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsPlaying(false);
@@ -241,15 +274,6 @@ const App: React.FC = () => {
                   <HistoryPanel history={history} onSelect={handleSelectHistory} onClear={() => setHistory([])} />
                 )}
               </div>
-              
-              {isUpdating && (
-                <div className="absolute inset-0 bg-base-200/50 backdrop-blur-sm flex items-center justify-center rounded-md z-10">
-                    <div className="flex items-center space-x-2 text-primary-amber font-display">
-                        <Loader size="sm" />
-                        <span>APPLYING CHANGES...</span>
-                    </div>
-                </div>
-              )}
             </div>
 
             {activeTab === 'config' && (
@@ -277,6 +301,11 @@ const App: React.FC = () => {
                     <Loader size="sm" />
                     <span className="ml-2">ANALYZING...</span>
                   </>
+                ) : isUpdating ? (
+                  <>
+                    <Loader size="sm" />
+                    <span className="ml-2">APPLYING CHANGES...</span>
+                  </>
                 ) : (
                   <>
                     <PlayIcon className="w-5 h-5 mr-2"/>
@@ -288,26 +317,26 @@ const App: React.FC = () => {
           </div>
 
           <div className="lg:col-span-2 tactical-panel p-6 rounded-md space-y-6 min-h-[600px]">
-             {isLoading && !analysisResult && (
-                <div className="flex flex-col items-center justify-center h-full text-center">
+             {isLoading && (
+                <div className="flex flex-col h-full items-center justify-center text-text-secondary">
                     <Loader size="lg" />
-                    <p className="mt-4 text-text-secondary font-display tracking-widest">GENERATING SCENARIO</p>
-                    <p className="text-sm text-text-secondary/70">This may take a moment.</p>
+                    <p className="ml-3 font-display tracking-widest text-lg mt-4">ANALYZING SPECTRUM DATA</p>
+                    <p className="text-sm">Generating complete scenario...</p>
                 </div>
              )}
-             {error && (
+             {error && !isLoading && (
                 <div className="text-red-400 border border-red-500/50 bg-red-900/20 p-4 rounded-md">
                     <h3 className="font-bold font-display">ANALYSIS FAILED</h3>
-                    <p className="font-mono text-sm">{error}</p>
+                    <p className="font-mono text-sm whitespace-pre-wrap">{error}</p>
                 </div>
              )}
-            {analysisResult && (
+            {analysisResult && !isLoading && !error && (
                 <>
                     <div>
                         <h2 className="text-lg font-display text-primary-amber mb-4">Generated Deception Scenario</h2>
-                        <DeceptionScenario scenario={analysisResult.scenario} />
+                        <DeceptionScenario scenario={displayedScenario} />
                     </div>
-                    {analysisResult.visualizerData.length > 1 && (
+                    {!isTyping && analysisResult.visualizerData.length > 1 && (
                       <div className="pt-4">
                          <label htmlFor="timesteps" className="block text-sm font-medium text-text-secondary mb-2">
                            Temporal Evolution (Timestep)
@@ -333,9 +362,11 @@ const App: React.FC = () => {
                          </div>
                       </div>
                     )}
-                    <div className="border-t border-secondary/20 pt-6">
-                        <DataVisualizer data={currentVisualizerData} />
-                    </div>
+                    {!isTyping && (
+                      <div className="border-t border-secondary/20 pt-6">
+                          <DataVisualizer data={currentVisualizerData} />
+                      </div>
+                    )}
                 </>
             )}
              {!isLoading && !analysisResult && !error && (

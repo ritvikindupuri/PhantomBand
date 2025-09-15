@@ -67,7 +67,9 @@ You are PhantomBand, a specialized AI for advanced RF signal analysis and electr
 2.  **Generate Spectrum Data:** For each timestep, create a corresponding set of RF spectrum data points (frequency in MHz, power in dBm) that visually represent the events in the scenario. The data should be plausible and reflect the chosen environment, interference, and deception target.
 
 **Simulation Parameters:**
-*   **Environment:** ${params.environment}
+*   **Environment Type:** ${params.environment.type}
+*   **Signal Propagation Model:** ${params.environment.propagationModel}
+*   **Atmospheric Conditions:** ${params.environment.atmosphericCondition}
 *   **Interference Level:** ${params.interference}
 *   **Deception Target:** ${params.deceptionTarget}
 *   **Timesteps:** ${params.timesteps}
@@ -93,7 +95,7 @@ ${fileContent}
 
     prompt += `
 **Output Requirements:**
-Provide your response as a single JSON object matching the required schema. The 'scenario' should be a well-formatted Markdown string. The 'visualizerData' must be an array of arrays, with one inner array of spectrum data for each of the ${params.timesteps} timesteps. Ensure the data reflects the events in the scenario (e.g., a jamming signal should appear as a high-power, wide-band signal in the data).
+Provide your response as a single, valid JSON object that strictly adheres to the provided schema. The 'scenario' should be a well-formatted Markdown string. The 'visualizerData' must be an array of arrays, with one inner array of spectrum data for each of the ${params.timesteps} timesteps. Ensure the data reflects the events in the scenario (e.g., a jamming signal should appear as a high-power, wide-band signal in the data). Do not include any explanatory text outside of the JSON object.
 `;
     return prompt;
 };
@@ -138,6 +140,10 @@ export const generateDeceptionScenario = async (
         
         if (result.visualizerData.length !== params.timesteps) {
              console.warn(`API returned ${result.visualizerData.length} timesteps, but ${params.timesteps} were requested. The scenario may be incomplete.`);
+             // Pad the array if the AI didn't return enough timesteps
+             while(result.visualizerData.length < params.timesteps) {
+                result.visualizerData.push([]);
+             }
         }
         
         // Ensure visualizerData is not empty if scenario is valid

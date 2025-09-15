@@ -10,8 +10,10 @@ It provides a sophisticated "digital sandbox" where Electronic Warfare (EW) offi
 ## Key Features
 
 -   **Generative Scenario Creation:** Utilizes the Google Gemini API to create rich, narrative-driven deception scenarios that evolve over multiple timesteps.
+-   **Advanced Environment Modeling:** Configure detailed environmental factors including signal propagation models (Free Space, Hata, Log-distance) and atmospheric conditions (Clear, Rainy, Foggy) for higher-fidelity simulations.
 -   **Real Data Ingestion:** Analyze your own signal data by uploading `.csv` or `.txt` files. The AI uses this data as a baseline to create more realistic and relevant simulations.
--   **Real-time "What-If" Analysis:** Instantly observe the impact of changing environmental conditions. Adjust parameters like interference level or signal strength on-the-fly while a simulation is playing and see the results immediately.
+-   **Real-time "What-If" Analysis:** Instantly observe the impact of changing environmental conditions. Adjust parameters like interference level or propagation models on-the-fly and see the results immediately.
+-   **Enhanced Scenario Readability:** The generated scenario is presented in an interactive accordion view, with collapsible sections for each timestep and automatic syntax highlighting for key technical terms (frequencies, power levels), making complex narratives easy to digest.
 -   **Interactive Data Visualization:**
     -   Switch between **Area**, **Line**, and **Bar** charts for comprehensive spectrum analysis.
     -   Customize chart appearance with color pickers and line thickness controls.
@@ -83,10 +85,10 @@ The application should now be running and accessible at `http://localhost:3000` 
 
 ## Usage Guide
 
-1.  **Configure Simulation:** Use the controls on the left-hand panel to set the initial parameters for your scenario (Environment, Interference Level, Deception Target, Timesteps).
+1.  **Configure Simulation:** Use the controls on the left-hand panel to set the initial parameters for your scenario (Environment, Propagation Model, Interference Level, Deception Target, Timesteps).
 2.  **Upload Signal Data (Optional):** Click the "UPLOAD FILE" panel to select a `.csv` or `.txt` file containing signal data from your local machine. The AI will use this data to inform its generation process.
 3.  **Run Analysis:** Click the "RUN ANALYSIS" button. The application will send your configuration to the Gemini API and generate a new scenario.
-4.  **Review the Scenario:** Read the generated narrative in the "Generated Deception Scenario" panel to understand the context of the simulation.
+4.  **Review the Scenario:** Read the generated narrative in the "Generated Deception Scenario" panel. Expand and collapse timesteps for clarity. Notice how technical terms are highlighted for quick identification.
 5.  **Analyze the Spectrum:**
     -   Use the **Data Visualizer** to view the RF spectrum for the current timestep.
     -   Use the **playback controls** (play/pause button and slider) to move through the different timesteps and observe changes.

@@ -1,6 +1,5 @@
-
 # PhantomBand: Technical Documentation
-by: Ritvik Indupuri
+
 ## 1. Introduction
 
 ### 1.1. Purpose
@@ -26,15 +25,19 @@ PhantomBand is a client-side **Single Page Application (SPA)** built with **Reac
 
 ### 2.1. High-Level Diagram
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant React Client (Browser)
-    participant Google Gemini API
-
-    User->>React Client (Browser): User Interaction
-    React Client (Browser)->>Google Gemini API: HTTPS Request (JSON Payload)
-    Google Gemini API-->>React Client (Browser): JSON Response
+```
++------------------+      (HTTPS Request)       +---------------------+
+|                  |  <---------------------->  |                     |
+|  React Client    |      (JSON Payload)        |  Google Gemini API  |
+| (Browser)        |                            | (gemini-2.5-flash)  |
+|                  |  ---------------------->   |                     |
++------------------+      (JSON Response)       +---------------------+
+       |
+       | (User Interaction)
+       |
++------+-----------+
+|      User        |
++------------------+
 ```
 
 ### 2.2. Architectural Principles
@@ -101,11 +104,22 @@ This flow is triggered automatically when a user adjusts a simulation parameter 
     -   Uses the `recharts` library to render Area, Line, or Bar charts based on the `chartType` state.
     -   Contains the logic for filtering the displayed data based on user input.
 
+### `DeceptionScenario.tsx`
+-   **Role:** Renders the AI-generated scenario text in a highly readable and interactive format.
+-   **Responsibilities:**
+    -   Receives the `scenario` string as a prop.
+    -   **Text Parsing:** On render, it parses the scenario string, splitting it into sections based on "Timestep" headers (e.g., `**Timestep 1**`).
+    -   **State Management:** Manages its own internal UI state (`openSections`) to track which accordion sections are expanded or collapsed. The first section is open by default.
+    -   **Syntax Highlighting:** Applies regex-based syntax highlighting to the content of each section. It identifies and wraps key technical terms (frequencies, power levels, keywords) in `<span>` tags with specific CSS classes for color-coding. It also handles Markdown bolding.
+    -   **UI Rendering:** Renders the scenario as a series of collapsible panels (an accordion), allowing users to focus on one timestep at a time.
+
 ### `SimulationControls.tsx`
 -   **Role:** Displays the form for configuring simulation parameters.
 -   **Responsibilities:**
     -   Receives `params` and `onParamsChange` as props.
     -   Acts as a "controlled component." It does not manage its own state.
+    -   Renders dropdowns for all simulation parameters, including the granular environment settings: `Environment Type`, `Signal Propagation Model`, and `Atmospheric Conditions`.
+    -   Uses a separate `handleEnvironmentChange` handler to manage updates to the nested `params.environment` object.
     -   When a user changes an input, it calls the `onParamsChange` function to lift the state change up to `App.tsx`.
     -   Conditionally renders the "Custom Scenario" textarea.
 
@@ -137,7 +151,13 @@ This function dynamically constructs the prompt based on application state. Its 
 1.  **Role Priming:** The prompt begins by telling the AI its role: `You are PhantomBand, a specialized AI for advanced RF signal analysis...`. This sets the context and tone.
 2.  **Update Instructions (Conditional):** If `existingScenario` is provided, a special section is added to the prompt. This section explicitly tells the AI that this is a real-time update, provides the previous context, and instructs it to generate a *brand new, complete scenario* based on the *new* parameters. This is crucial for preventing the AI from just trying to append a small change.
 3.  **Task Definition:** Clearly lists the two main tasks: "Generate a Deception Scenario" (the narrative) and "Generate Spectrum Data".
-4.  **Parameter Injection:** All `simulationParams` are explicitly listed in the prompt, ensuring the AI considers every user setting.
+4.  **Parameter Injection:** All `simulationParams` are explicitly listed in the prompt, ensuring the AI considers every user setting. This includes the granular environment details:
+    -   `Environment Type`
+    -   `Signal Propagation Model`
+    -   `Atmospheric Conditions`
+    -   `Interference Level`
+    -   `Deception Target`
+    -   `Timesteps`
 5.  **File Content Injection (Conditional):** If `fileContent` exists, it is embedded directly into the prompt within a code block, with clear instructions to use it as the baseline for the simulation.
 6.  **Output Requirements:** The prompt concludes by re-emphasizing the need for a single JSON object matching the required schema. This reinforces the instructions provided in the API call's `config`.
 
@@ -154,10 +174,10 @@ The `ai.models.generateContent` call is configured for reliability and performan
 
 The application employs a simple yet effective state management strategy using only React's built-in hooks.
 
--   **Centralized State (`App.tsx`):** All state critical to the entire application's logic (the simulation parameters, the results, loading states) is held in the top-level `App` component. This provides a single source of truth.
+-   **Centralized State (`App.tsx`):** All state critical to the entire application's logic (the simulation parameters, the results, loading states) is held in the top-level `App` component. This provides a single source of truth. The `simulationParams` state now includes a nested `environment` object to manage the more detailed settings.
 -   **Props Drilling:** State is passed down to child components via props. For an application of this size, this is more straightforward than introducing a complex state management library like Redux or Zustand.
 -   **Lifting State Up:** Child components (`SimulationControls`, `FileUpload`) notify the parent of changes via callback functions passed as props (e.g., `onParamsChange`).
--   **Component-Local State:** UI-specific state that doesn't affect the rest of the application is managed locally within the component itself. The prime example is `DataVisualizer`, which manages its own filter and appearance settings using `useState` and `localStorage`, making it a self-contained, reusable component.
+-   **Component-Local State:** UI-specific state that doesn't affect the rest of the application is managed locally within the component itself. Prime examples are `DataVisualizer` (managing filter/appearance settings) and `DeceptionScenario` (managing the open/closed state of its accordion sections).
 
 ---
 
@@ -168,7 +188,7 @@ The user interface is designed to evoke a "tactical command center" aesthetic. I
 
 ### 7.2. Technology
 -   **Tailwind CSS:** This utility-first CSS framework was chosen for its ability to enable rapid and consistent styling directly within the JSX. The configuration is defined inline in `index.html` for simplicity, which is well-suited for a single-page application of this scope.
--   **Custom Global Styles:** A few targeted CSS rules are defined in the `<style>` block of `index.html`. These handle elements that are difficult to style with utility classes alone, such as the global scrollbar and the custom appearance of `input[type=range]` sliders, ensuring a cohesive look and feel across all components.
+-   **Custom Global Styles:** A few targeted CSS rules are defined in the `<style>` block of `index.html`. These handle elements that are difficult to style with utility classes alone, such as the global scrollbar, custom `input[type=range]` sliders, and simple keyframe animations for UI elements.
 -   **Fonts:** The application uses two primary fonts:
     -   **Orbitron:** A display font used for headings and titles to give a futuristic, technical feel.
     -   **Roboto Mono:** A monospaced font used for all body text, labels, and data readouts to ensure maximum clarity and readability.
