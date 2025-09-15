@@ -1,5 +1,4 @@
 # PhantomBand: Technical Documentation
-by: Ritvik Indupuri
 
 ## 1. Introduction
 

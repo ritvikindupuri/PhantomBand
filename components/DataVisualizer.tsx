@@ -100,7 +100,10 @@ export const DataVisualizer: React.FC<DataVisualizerProps> = ({ data }) => {
     });
   }, [data, filters]);
   
+  const isBarChartDense = chartType === 'bar' && filteredData.length > 75;
+
   const renderChart = () => {
+      const chartMargin = { top: 10, right: 30, left: 20, bottom: 25 };
       const commonChartComponents = (
         <>
           <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" opacity={0.3}/>
@@ -111,20 +114,20 @@ export const DataVisualizer: React.FC<DataVisualizerProps> = ({ data }) => {
             tick={{ fill: '#9ca3af', fontSize: 12 }}
             domain={['dataMin', 'dataMax']}
             tickFormatter={(value) => `${value.toFixed(1)}`}
-            label={{ value: 'Frequency (MHz)', position: 'insideBottom', offset: -10, fill: '#9ca3af', fontSize: 12 }}
+            label={{ value: 'Frequency (MHz)', position: 'insideBottom', offset: -15, fill: '#e5e7eb', fontSize: 14 }}
           />
           <YAxis 
             stroke="#9ca3af" 
             tick={{ fill: '#9ca3af', fontSize: 12 }}
-            label={{ value: 'Power (dBm)', angle: -90, position: 'insideLeft', fill: '#9ca3af', fontSize: 12 }}
-            // Add padding to the top of the chart to prevent clipping
-            domain={['auto', 'dataMax + 5']}
+            label={{ value: 'Power (dBm)', angle: -90, position: 'insideLeft', fill: '#e5e7eb', fontSize: 14 }}
+            domain={[dataMin => Math.floor(dataMin) - 5, dataMax => Math.ceil(dataMax) + 5]}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(26, 34, 51, 0.8)',
+              backgroundColor: 'rgba(26, 34, 51, 0.9)',
               borderColor: '#4b5563',
               borderRadius: '0.375rem',
+              backdropFilter: 'blur(4px)',
             }}
             labelStyle={{ color: chartOptions.color, fontWeight: 'bold' }}
             formatter={(value: number) => [`${value.toFixed(2)} dBm`, 'Power']}
@@ -136,14 +139,14 @@ export const DataVisualizer: React.FC<DataVisualizerProps> = ({ data }) => {
       switch (chartType) {
         case 'line':
             return (
-                <LineChart data={filteredData}>
+                <LineChart data={filteredData} margin={chartMargin}>
                     {commonChartComponents}
                     <Line type="monotone" dataKey="power" stroke={chartOptions.color} strokeWidth={chartOptions.strokeWidth} dot={false} isAnimationActive={true} animationDuration={300} />
                 </LineChart>
             );
         case 'bar':
             return (
-                <BarChart data={filteredData} barCategoryGap="20%">
+                <BarChart data={filteredData} barGap={2} margin={chartMargin}>
                     <defs>
                         <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor={chartOptions.color} stopOpacity={0.8}/>
@@ -154,17 +157,17 @@ export const DataVisualizer: React.FC<DataVisualizerProps> = ({ data }) => {
                     <Bar 
                         dataKey="power" 
                         fill="url(#barGradient)" 
-                        isAnimationActive={true} 
+                        isAnimationActive={!isBarChartDense} 
                         animationDuration={300}
-                        radius={[4, 4, 0, 0]} // Rounded top corners
-                        maxBarSize={40} // Prevent bars from becoming too wide
+                        radius={[2, 2, 0, 0]}
+                        maxBarSize={50}
                     />
                 </BarChart>
             );
         case 'area':
         default:
             return (
-                <AreaChart data={filteredData}>
+                <AreaChart data={filteredData} margin={chartMargin}>
                     <defs>
                         <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor={chartOptions.color} stopOpacity={0.4}/>
@@ -272,7 +275,17 @@ export const DataVisualizer: React.FC<DataVisualizerProps> = ({ data }) => {
         </div>
       </div>
 
-      <div className="h-96 w-full">
+      <div className="h-96 w-full relative">
+         {isBarChartDense && (
+             <div className="absolute inset-0 bg-base-200/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-md text-center p-4">
+                <div>
+                    <h4 className="font-display text-lg text-primary-amber">Data Too Dense for Bar Chart</h4>
+                    <p className="text-sm text-text-secondary mt-1 max-w-xs mx-auto">
+                        For a clearer view, please use the filters to narrow your data range, or switch to a <strong>Line</strong> or <strong>Area</strong> chart.
+                    </p>
+                </div>
+            </div>
+        )}
         {filteredData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             {renderChart()}
