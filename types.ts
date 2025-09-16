@@ -79,8 +79,4 @@ export interface HistoryItem extends AnalysisResult {
   id: string;
   timestamp: string;
   params: SimulationParams;
-  file?: {
-    name: string;
-    content: string; // base64 encoded
-  }
 }

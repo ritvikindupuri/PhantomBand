@@ -2,7 +2,7 @@
 
 **PhantomBand is an advanced, AI-driven platform designed for military-grade electronic warfare (EW) training, mission rehearsal, and signals intelligence (SIGINT) analysis.**
 
-It functions as a high-fidelity **"digital adversary,"** capable of generating dynamic and realistic Radio Frequency (RF) threat scenarios. By grounding its simulations in real-world data and leveraging Google's Gemini AI as an analytical engine, PhantomBand moves beyond simple simulation. It provides operators with **actionable intelligence**, including automated threat classifications and suggested tactical countermeasures, creating an unparalleled environment for developing and mastering electronic warfare TTPs (Tactics, Techniques, and Procedures).
+It functions as a high-fidelity **"digital adversary,"** capable of generating dynamic and realistic Radio Frequency (RF) threat scenarios. By leveraging Google's Gemini AI as an analytical engine, PhantomBand moves beyond simple simulation. It provides operators with **actionable intelligence**, including automated threat classifications and suggested tactical countermeasures, creating an unparalleled environment for developing and mastering electronic warfare TTPs (Tactics, Techniques, and Procedures).
 
 ---
 
@@ -17,8 +17,6 @@ It functions as a high-fidelity **"digital adversary,"** capable of generating d
     -   **Comprehensive Situational Awareness:** A multi-line chart displays the RF data for **all timesteps simultaneously**, providing a complete overview of the evolving electromagnetic environment.
     -   **Interactive Analysis:** The timeline controls **instantly highlight** the active timestep on the chart, creating a seamless, intuitive link between the narrative, threat assessment, and its specific spectral signature.
     -   **Visual Threat Highlighting:** Detected anomalies are automatically marked with a shaded overlay directly on the spectrum chart for rapid identification.
-
--   **"Ground Truth" Data Ingestion:** Upload your own real-world `.csv` or `.txt` signal data. The AI performs a complete analysis of this data, using it as a **high-fidelity baseline** to ensure generated threat scenarios are realistic and relevant to your specific operational environment.
 
 -   **Analyst-Grade FFT Controls:**
     -   Switch to a **Fast Fourier Transform (FFT)** view to perform deep-dive cepstral analysis on any timestep.
@@ -44,11 +42,11 @@ It functions as a high-fidelity **"digital adversary,"** capable of generating d
 
 ## Analyst Workflow
 
-The platform is designed for a seamless workflow from data to decision.
+The platform is designed for a seamless workflow from parameters to decision.
 
 | Step                      | Action                                                                                             | Outcome                                                                |
 | :------------------------ | :------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
-| **1. CONFIGURE MISSION**  | Set simulation parameters (Environment, Threat, etc.) and optionally upload a baseline data file.  | The operational context for the simulation is defined.                 |
+| **1. CONFIGURE MISSION**  | Set simulation parameters (Environment, Threat, etc.) in the controls panel.                       | The operational context for the simulation is defined.                 |
 | **2. EXECUTE ANALYSIS**   | Click "RUN ANALYSIS" to task the AI engine.                                                        | A high-fidelity, multi-timestep scenario with threat assessment is generated. |
 | **3. ANALYZE & CORRELATE** | Use the timeline controls to scrub through the scenario.                                           | The "waterfall" chart, narrative, and threat advisory update in perfect sync. |
 | **4. DEEP DIVE**          | Switch to the FFT view and adjust parameters to conduct deep signal analysis on a specific timestep. | Deeper insights into signal characteristics are revealed.                |

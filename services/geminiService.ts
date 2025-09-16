@@ -75,9 +75,7 @@ const responseSchema = {
 };
 
 const buildPrompt = (
-    params: SimulationParams,
-    file: File | null,
-    fileContent: string | null
+    params: SimulationParams
 ): string => {
     let prompt = `
 You are PhantomBand, a specialized AI for advanced RF signal analysis and electronic warfare simulation. Your task is to generate a realistic and detailed deception scenario based on the user's specifications, including performing automated threat assessment.
@@ -114,20 +112,6 @@ You are PhantomBand, a specialized AI for advanced RF signal analysis and electr
         prompt += `*   **Custom Scenario Details:** ${params.customPrompt}\n`;
     }
 
-    if (file && fileContent) {
-        prompt += `
-**Uploaded File for Full Analysis:**
-*   **File Name:** ${file.name}
-*   **File Type:** ${file.type}
-*   **Instructions:** You are being provided with the FULL content of the uploaded file. Your task is to perform a thorough and complete analysis of this data. Every single column, every single cell, and every single piece of data must be meticulously examined to inform the simulation. Use this comprehensive analysis as the baseline or target signal for the deception scenario.
-
-*   **Full File Content:**
-\`\`\`
-${fileContent}
-\`\`\`
-`;
-    }
-
     prompt += `
 **Output Requirements:**
 Provide your response as a single, valid JSON object that strictly adheres to the provided schema. The 'scenario' should be a well-formatted Markdown string. The 'visualizerData' must be an array of objects, each containing 'spectrum' and 'anomalies' arrays, for each of the ${params.timesteps} timesteps. Ensure the data reflects the events in the scenario. Do not include any explanatory text outside of the JSON object.
@@ -137,12 +121,10 @@ Provide your response as a single, valid JSON object that strictly adheres to th
 
 
 export const generateDeceptionScenario = async (
-    params: SimulationParams,
-    file: File | null,
-    fileContent: string | null
+    params: SimulationParams
 ): Promise<AnalysisResult> => {
 
-    const prompt = buildPrompt(params, file, fileContent);
+    const prompt = buildPrompt(params);
 
     try {
         const response = await ai.models.generateContent({

@@ -30,12 +30,11 @@ PhantomBand is a client-side **Single Page Application (SPA)** built with **Reac
 |   | Scenario |    History   |   |        +---------------------------------------------+
 |   +-------------------------+   |        |  AI's Role: The Digital Adversary & Analyst |
 +---------------------------------+        |---------------------------------------------|
-       | (User Interaction)                | 1. Analyze "Ground Truth" Data (if provided)|
-       |                                   | 2. Simulate Realistic Scenario Narrative    |
-+------+-----------+                        | 3. Generate Correlated Spectrum Data        |
-|      Analyst     |                        | 4. Perform Threat Assessment on own data    |
-+------------------+                        | 5. Return complete, structured JSON         |
-                                           +---------------------------------------------+
+       | (User Interaction)                | 1. Simulate Realistic Scenario Narrative    |
+       |                                   | 2. Generate Correlated Spectrum Data        |
++------+-----------+                        | 3. Perform Threat Assessment on own data    |
+|      Analyst     |                        | 4. Return complete, structured JSON         |
++------------------+                        +---------------------------------------------+
 ```
 
 ### 2.2. Architectural Principles
@@ -52,11 +51,10 @@ PhantomBand is a client-side **Single Page Application (SPA)** built with **Reac
 The core innovation of PhantomBand is its use of the Gemini API not as a language model, but as a **non-deterministic analytical engine**. This is achieved through a combination of advanced prompt engineering and strict output schema enforcement.
 
 -   **Role Priming:** The prompt begins by assigning the AI the persona of "PhantomBand, a specialized AI for advanced RF signal analysis and electronic warfare simulation." This sets the context and technical tone, guiding the model's behavior.
--   **Task Delegation & Structure:** The prompt clearly separates the request into three parts: Generate Narrative, Generate Spectrum Data, and **Perform Threat Assessment**. This structured request forces the AI to follow a logical, analytical process.
+-   **Task Delegation & Structure:** The prompt clearly separates the request into three parts: Generate Narrative, Generate Spectrum Data, and **Perform Threat Assessment**. This structured request forces the AI to follow a logical, analytical process based on the user's parameters.
 -   **Forcing Actionable Intelligence:** By including `classification` and `countermeasure` in the required JSON schema and explicitly instructing the AI on their tactical meaning, we compel the model to go beyond simple data generation. It must analyze the data it just created, identify anomalies, classify them, and propose a solution. This transforms the AI from a simple generator into a synthetic analyst.
--   **"Ground Truth" Analysis:** When a user uploads a file, the prompt is dynamically updated to include the file's entire content with the instruction to perform a "thorough and complete analysis" to use as a baseline. This grounds the AI's complex generative process in real-world data, ensuring relevance and fidelity.
 
-This methodology allows the application to leverage the vast, latent knowledge space of the foundation model to simulate a plausible, intelligent adversary and then immediately act as the analyst to report on that adversary's actions.
+This methodology allows the application to leverage the vast, latent knowledge space of the foundation model to simulate a plausible, intelligent adversary and then immediately act as the analyst to report on that adversary's actions based on the defined mission parameters.
 
 ---
 
@@ -66,11 +64,11 @@ The application's data flow is a single, orchestrated process designed to transf
 
 1.  **Initiation:** The user configures mission parameters in the `SimulationControls` and clicks "RUN ANALYSIS". This triggers the `handleRunAnalysis` function in `App.tsx`.
 
-2.  **Prompt Construction:** The `generateDeceptionScenario` function in `services/geminiService.ts` is invoked. It assembles all simulation parameters and the full content of any uploaded file into a detailed prompt designed to guide the AI's analytical process.
+2.  **Prompt Construction:** The `generateDeceptionScenario` function in `services/geminiService.ts` is invoked. It assembles all simulation parameters into a detailed prompt designed to guide the AI's analytical process.
 
 3.  **AI Tasking:** An asynchronous request is sent to the Gemini API. The payload includes the prompt and the critical `responseSchema`. This schema is the contract that guarantees the AI's output will be a structured, usable data object.
 
-4.  **Simulation & Analysis (Inside the AI):** The `gemini-2.5-flash` model executes the complex instructions. It analyzes the baseline data, generates the narrative and spectrum data, and then performs the threat assessment on its own output, packaging everything into a single JSON object.
+4.  **Simulation & Analysis (Inside the AI):** The `gemini-2.5-flash` model executes the complex instructions. It generates the narrative and spectrum data based on the parameters, and then performs the threat assessment on its own output, packaging everything into a single JSON object.
 
 5.  **Response & Ingestion:** The client receives the JSON response. After a minor sanitization step, the data is parsed into a structured `AnalysisResult` object. `App.tsx` updates its state with this result, adding the entire session to `history` (and `localStorage`).
 
