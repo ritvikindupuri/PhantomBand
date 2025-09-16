@@ -1,7 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ClipboardIcon } from './icons/ClipboardIcon';
 
-// Local icon component to avoid creating a new file for a simple icon.
 const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -54,12 +53,35 @@ const formatAndHighlightText = (text: string) => {
     });
 };
 
-// Fix: Added missing props interface for the component.
+
+const parseSectionContent = (content: string) => {
+    // Splits content by the bolded keywords, keeping the keywords.
+    const parts = content.split(/\*\*(SITUATION|ACTION|IMPACT|OBSERVATIONS):\*\*/g).filter(p => p.trim());
+    const structuredContent: { title: string; text: string }[] = [];
+
+    // The regex split results in [title, text, title, text...].
+    // We iterate through them as pairs.
+    for (let i = 0; i < parts.length; i += 2) {
+        if (parts[i+1]) {
+            structuredContent.push({
+                title: parts[i],
+                // Replace markdown bullets with a styled character for better visual consistency
+                text: parts[i+1].trim().replace(/^- /gm, '• ') 
+            });
+        } else if (parts[i]) {
+            // This handles any content that doesn't fit the keyword structure.
+            structuredContent.push({ title: 'OVERVIEW', text: parts[i].trim().replace(/^- /gm, '• ') });
+        }
+    }
+    return structuredContent;
+};
+
 interface DeceptionScenarioProps {
     scenario: string;
+    isTyping: boolean;
 }
 
-export const DeceptionScenario: React.FC<DeceptionScenarioProps> = ({ scenario }) => {
+export const DeceptionScenario: React.FC<DeceptionScenarioProps> = ({ scenario, isTyping }) => {
     const [copied, setCopied] = useState(false);
     const [openSections, setOpenSections] = useState<Record<number, boolean>>({ 0: true });
 
@@ -78,8 +100,8 @@ export const DeceptionScenario: React.FC<DeceptionScenarioProps> = ({ scenario }
 
     const scenarioSections = useMemo(() => {
         if (!scenario) return [];
-        // Use a positive lookahead to split the text by timestep headers, keeping the headers in the resulting sections.
-        const sections = scenario.split(/(?=^\s*(\*\*Timestep \d+.*?\*\*|Timestep \d+:))/gm).filter(s => s.trim() !== '');
+        // More robustly splits the scenario into sections based on common markdown headers (e.g., "**Header**", "## Header") or "Timestep X:" format.
+        const sections = scenario.split(/(?=^\s*(?:\*\*.*?\*\*|#+ .+|Timestep \d+:))/gm).filter(s => s.trim() !== '');
         
         // If the split results in only one or zero sections, treat the entire scenario as a single section.
         if (sections.length <= 1 && scenario.trim()) {
@@ -97,11 +119,6 @@ export const DeceptionScenario: React.FC<DeceptionScenarioProps> = ({ scenario }
         });
     }, [scenario]);
 
-    // When the scenario text changes, reset the accordion to have the first section open.
-    useEffect(() => {
-        setOpenSections({ 0: true });
-    }, [scenario]);
-
     return (
         <div className="relative bg-base-300/50 p-4 rounded-md text-sm text-text-secondary leading-relaxed font-mono">
             <button
@@ -116,23 +133,39 @@ export const DeceptionScenario: React.FC<DeceptionScenarioProps> = ({ scenario }
                 )}
             </button>
             <div className="space-y-2">
-                {scenarioSections.map((section, index) => (
-                    <div key={index} className="bg-base-200/50 rounded-md overflow-hidden border border-secondary/20">
-                        <button
-                            onClick={() => toggleSection(index)}
-                            className="w-full flex justify-between items-center text-left p-3 font-semibold text-text-main hover:bg-secondary/20 transition-colors"
-                            aria-expanded={!!openSections[index]}
-                        >
-                            <span className="uppercase tracking-wider text-primary-amber text-xs">{section.header.replace(/\*+/g, '')}</span>
-                            <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${openSections[index] ? 'rotate-180' : ''}`} />
-                        </button>
-                        {openSections[index] && (
-                            <div className="px-4 pb-4 border-t border-secondary/20 whitespace-pre-wrap animate-fade-in">
-                                {formatAndHighlightText(section.content)}
-                            </div>
-                        )}
-                    </div>
-                ))}
+                {scenarioSections.map((section, index) => {
+                    const structuredContent = parseSectionContent(section.content);
+                    return (
+                        <div key={index} className="bg-base-200/50 rounded-md overflow-hidden border border-secondary/20">
+                            <button
+                                onClick={() => toggleSection(index)}
+                                disabled={isTyping}
+                                className="w-full flex justify-between items-center text-left p-3 font-semibold text-text-main hover:bg-secondary/20 transition-colors disabled:cursor-wait disabled:opacity-70"
+                                aria-expanded={!!openSections[index]}
+                            >
+                                <span className="uppercase tracking-wider text-primary-amber text-xs">{section.header.replace(/[*#]/g, '').trim()}</span>
+                                <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${openSections[index] ? 'rotate-180' : ''}`} />
+                            </button>
+                            {openSections[index] && (
+                                <div className="px-4 pb-4 border-t border-secondary/20 animate-fade-in space-y-4 pt-3">
+                                    {structuredContent.length > 0 ? (
+                                        structuredContent.map((part, partIndex) => (
+                                            <div key={partIndex}>
+                                                <h4 className="font-bold text-text-main tracking-wide uppercase text-xs text-primary-amber/80">{part.title}</h4>
+                                                <div className="pl-3 border-l-2 border-primary-amber/20 mt-1 whitespace-pre-wrap text-text-secondary">
+                                                     {formatAndHighlightText(part.text)}
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        // Fallback for content that doesn't match the new structure
+                                        <div className="whitespace-pre-wrap">{formatAndHighlightText(section.content)}</div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                 })}
             </div>
         </div>
     );

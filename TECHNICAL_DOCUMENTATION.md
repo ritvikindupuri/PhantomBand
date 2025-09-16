@@ -1,3 +1,4 @@
+
 # PhantomBand: Technical Documentation
 
 ## 1. Introduction
@@ -96,13 +97,15 @@ This flow is triggered automatically when a user adjusts a simulation parameter 
     -   Renders the main layout grid and passes state down to child components as props.
 
 ### `DataVisualizer.tsx`
--   **Role:** Renders the RF spectrum chart and all associated UI controls.
+-   **Role:** Renders the RF spectrum chart, FFT analysis, and all associated UI controls.
 -   **Responsibilities:**
     -   Receives `data` (for the current timestep) as a prop from `App.tsx`.
-    -   Manages its own internal UI state: `filters`, `chartType`, and `chartOptions`.
+    -   Manages its own internal UI state: `filters`, `chartType`, `chartView` (`spectrum` or `fft`), and `chartOptions`.
     -   **Persistence:** Uses `useEffect` hooks to save and load its UI state to/from `localStorage`, ensuring user preferences are remembered across sessions.
-    -   Uses the `recharts` library to render Area, Line, or Bar charts based on the `chartType` state.
-    -   Contains the logic for filtering the displayed data based on user input.
+    -   **Dual View Rendering:**
+        -   **Spectrum View:** Uses the `recharts` library to render Area, Line, or Bar charts. It includes rich, interactive features like custom tooltips, user-configurable colors and stroke widths, and gradient fills for bar charts to improve clarity. It also includes logic to prevent rendering overly dense bar charts, guiding the user to a more appropriate visualization.
+        -   **FFT View:** Provides a secondary analysis mode. It calculates a Fast Fourier Transform on the power values of the spectrum data (a form of cepstral analysis). This is computationally intensive and is memoized using `useMemo`. The component includes a from-scratch, recursive implementation of the Cooley-Tukey FFT algorithm, complete with data padding to the next power of 2, to analyze periodicities in the spectrum itself. The result is displayed as a bar chart of magnitude vs. quefrency.
+    -   Contains the logic for filtering the displayed data based on user input, which affects both Spectrum and FFT views.
 
 ### `DeceptionScenario.tsx`
 -   **Role:** Renders the AI-generated scenario text in a highly readable and interactive format.

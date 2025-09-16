@@ -334,7 +334,7 @@ const App: React.FC = () => {
                 <>
                     <div>
                         <h2 className="text-lg font-display text-primary-amber mb-4">Generated Deception Scenario</h2>
-                        <DeceptionScenario scenario={displayedScenario} />
+                        <DeceptionScenario key={history[0]?.id || 'initial'} scenario={displayedScenario} isTyping={isTyping} />
                     </div>
                     {!isTyping && analysisResult.visualizerData.length > 1 && (
                       <div className="pt-4">

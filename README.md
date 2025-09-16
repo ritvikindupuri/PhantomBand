@@ -1,4 +1,5 @@
 
+
 # PhantomBand: Generative RF Environment Simulator
 
 **PhantomBand is a generative AI/ML system that simulates realistic Radio Frequency (RF) environments for advanced training, mission rehearsal, and cyber deception operations.**
@@ -15,6 +16,7 @@ It provides a sophisticated "digital sandbox" where Electronic Warfare (EW) offi
 -   **Real-time "What-If" Analysis:** Instantly observe the impact of changing environmental conditions. Adjust parameters like interference level or propagation models on-the-fly and see the results immediately.
 -   **Enhanced Scenario Readability:** The generated scenario is presented in an interactive accordion view, with collapsible sections for each timestep and automatic syntax highlighting for key technical terms (frequencies, power levels), making complex narratives easy to digest.
 -   **Interactive Data Visualization:**
+    -   **Dual Analysis Modes:** Toggle between the standard **Spectrum** view and a **Fast Fourier Transform (FFT)** view to perform cepstral analysis, revealing hidden periodicities within the signal data.
     -   Switch between **Area**, **Line**, and **Bar** charts for comprehensive spectrum analysis.
     -   Customize chart appearance with color pickers and line thickness controls.
     -   Filter the view by frequency and power to focus on signals of interest.
@@ -91,6 +93,7 @@ The application should now be running and accessible at `http://localhost:3000` 
 4.  **Review the Scenario:** Read the generated narrative in the "Generated Deception Scenario" panel. Expand and collapse timesteps for clarity. Notice how technical terms are highlighted for quick identification.
 5.  **Analyze the Spectrum:**
     -   Use the **Data Visualizer** to view the RF spectrum for the current timestep.
+    -   Toggle between **Spectrum** and **FFT** analysis modes to get different perspectives on the data.
     -   Use the **playback controls** (play/pause button and slider) to move through the different timesteps and observe changes.
     -   Use the **filter controls** to narrow in on specific frequency or power ranges.
     -   Change the **chart type** and **appearance** to suit your analysis needs.

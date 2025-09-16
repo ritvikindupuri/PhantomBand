@@ -63,7 +63,13 @@ You are PhantomBand, a specialized AI for advanced RF signal analysis and electr
     prompt += `
 **Analysis Request:**
 
-1.  **Generate a Deception Scenario:** Create a narrative describing the specified electronic attack. The scenario should evolve over ${params.timesteps} timesteps. Describe the attacker's actions, the target's vulnerabilities, and the changing RF environment. The tone should be technical and analytical, like a professional after-action report.
+1.  **Generate a Deception Scenario:** Create a narrative for a professional after-action report. The scenario must evolve over ${params.timesteps} timesteps.
+    **Formatting is critical.** For each timestep, structure the narrative using these exact Markdown subheadings:
+    - **SITUATION:** Brief overview of the current state.
+    - **ACTION:** Detailed description of the attacker's actions and techniques used.
+    - **IMPACT:** Analysis of the effect on the target and the RF environment.
+    - **OBSERVATIONS:** Key signals or anomalies to look for in the spectrum data.
+    Use concise bullet points under each subheading where appropriate. The tone must be technical and analytical.
 2.  **Generate Spectrum Data:** For each timestep, create a corresponding set of RF spectrum data points (frequency in MHz, power in dBm) that visually represent the events in the scenario. The data should be plausible and reflect the chosen environment, interference, and deception target.
 
 **Simulation Parameters:**
@@ -131,7 +137,13 @@ export const generateDeceptionScenario = async (
             throw new Error("API returned an empty response.");
         }
 
-        const result: AnalysisResult = JSON.parse(jsonText);
+        // Pre-process the JSON to fix a common generation error where a minus sign is not followed by a number.
+        // This regex finds a colon, optional whitespace, and a minus sign,
+        // but only if it's NOT followed by a digit (using a negative lookahead).
+        // It replaces `...:"-",...` with `...:"-0",...` which is valid JSON.
+        const sanitizedJsonText = jsonText.replace(/:(\s*-\s*)(?![0-9])/g, ':$10');
+
+        const result: AnalysisResult = JSON.parse(sanitizedJsonText);
 
         // Basic validation
         if (!result.scenario || !result.visualizerData || !Array.isArray(result.visualizerData)) {
