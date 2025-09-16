@@ -1,3 +1,4 @@
+// Fix: Removed unused and incorrect import of 'Recharts' from 'recharts'.
 export enum EnvironmentType {
   Urban = 'Urban',
   Suburban = 'Suburban',
@@ -54,11 +55,24 @@ export interface SpectrumDataPoint {
   power: number; // in dBm
 }
 
-export type VisualizerData = SpectrumDataPoint[];
+export interface Anomaly {
+    description: string;
+    frequencyStart: number;
+    frequencyEnd: number;
+    classification: string;
+    countermeasure: string;
+}
+
+export interface TimestepData {
+    spectrum: SpectrumDataPoint[];
+    anomalies: Anomaly[];
+}
+
+export type VisualizerData = TimestepData[];
 
 export interface AnalysisResult {
   scenario: string;
-  visualizerData: VisualizerData[]; // An array of spectrums, one for each timestep
+  visualizerData: VisualizerData;
 }
 
 export interface HistoryItem extends AnalysisResult {

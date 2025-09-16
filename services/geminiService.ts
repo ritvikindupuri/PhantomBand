@@ -10,28 +10,64 @@ const responseSchema = {
     properties: {
         scenario: {
             type: Type.STRING,
-            description: "A detailed, step-by-step narrative of the deception scenario. Describe the attacker's actions, the target's expected response, and the impact on the RF environment over the specified number of timesteps. Use Markdown for formatting, especially for titles and key points."
+            description: "A detailed, step-by-step narrative of the deception scenario. Describe the attacker's actions, the target's expected response, and the impact on the RF environment over the specified number of timesteps. Use Markdown for formatting. For each timestep, the header must be '## Timestep X' or '**Timestep X**'."
         },
         visualizerData: {
             type: Type.ARRAY,
-            description: "An array of spectrum data arrays, one for each timestep. Each inner array represents the RF spectrum at that point in time.",
+            description: "An array of data objects, one for each timestep. Each object contains the spectrum data and any detected anomalies.",
             items: {
-                type: Type.ARRAY,
-                description: "Spectrum data for a single timestep, containing multiple frequency-power data points.",
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        frequency: {
-                            type: Type.NUMBER,
-                            description: "Frequency in MHz."
-                        },
-                        power: {
-                            type: Type.NUMBER,
-                            description: "Power level in dBm."
+                type: Type.OBJECT,
+                properties: {
+                    spectrum: {
+                        type: Type.ARRAY,
+                        description: "Spectrum data for a single timestep, containing multiple frequency-power data points.",
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                frequency: {
+                                    type: Type.NUMBER,
+                                    description: "Frequency in MHz."
+                                },
+                                power: {
+                                    type: Type.NUMBER,
+                                    description: "Power level in dBm."
+                                }
+                            },
+                            required: ["frequency", "power"]
                         }
                     },
-                    required: ["frequency", "power"]
-                }
+                    anomalies: {
+                        type: Type.ARRAY,
+                        description: "An array of detected anomalies in the spectrum for this timestep. This should include unexpected signals, jamming, or other notable events.",
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                description: {
+                                    type: Type.STRING,
+                                    description: "A concise description of the anomaly (e.g., 'Unidentified hopping signal', 'Broadband jamming noise')."
+                                },
+                                frequencyStart: {
+                                    type: Type.NUMBER,
+                                    description: "The starting frequency of the anomalous signal in MHz."
+                                },
+                                frequencyEnd: {
+                                    type: Type.NUMBER,
+                                    description: "The ending frequency of the anomalous signal in MHz."
+                                },
+                                classification: {
+                                    type: Type.STRING,
+                                    description: "A tactical classification of the anomaly (e.g., 'Jamming', 'Spoofing', 'UAV Downlink', 'Unknown Signal')."
+                                },
+                                countermeasure: {
+                                    type: Type.STRING,
+                                    description: "A suggested tactical countermeasure for the classified anomaly (e.g., 'Deploy targeted jamming', 'Initiate signal triangulation', 'Monitor for further activity')."
+                                }
+                            },
+                            required: ["description", "frequencyStart", "frequencyEnd", "classification", "countermeasure"]
+                        }
+                    }
+                },
+                required: ["spectrum", "anomalies"]
             }
         }
     },
@@ -41,36 +77,29 @@ const responseSchema = {
 const buildPrompt = (
     params: SimulationParams,
     file: File | null,
-    fileContent: string | null,
-    currentTimestep?: number,
-    existingScenario?: string
+    fileContent: string | null
 ): string => {
     let prompt = `
-You are PhantomBand, a specialized AI for advanced RF signal analysis and electronic warfare simulation. Your task is to generate a realistic and detailed deception scenario based on the user's specifications.
-`;
+You are PhantomBand, a specialized AI for advanced RF signal analysis and electronic warfare simulation. Your task is to generate a realistic and detailed deception scenario based on the user's specifications, including performing automated threat assessment.
 
-    if (existingScenario && currentTimestep !== undefined) {
-        prompt += `
-**Simulation Update Instructions:**
-*   This is a real-time update to an ongoing simulation.
-*   The simulation was at timestep ${currentTimestep + 1} of the total requested timesteps.
-*   The user has just adjusted the parameters in real-time.
-*   **Previous Scenario Context (for reference only):** "${existingScenario.substring(0, 500)}..."
-*   **Your Primary Task:** Generate a brand new, complete scenario from scratch based on the **new** simulation parameters listed below. The new parameters are the definitive source of truth. Create a new narrative and regenerate ALL ${params.timesteps} timesteps of spectrum data to match these new parameters. Maintain logical consistency where possible, but prioritize accurately reflecting the new settings.
-`;
-    }
-
-    prompt += `
 **Analysis Request:**
 
 1.  **Generate a Deception Scenario:** Create a narrative for a professional after-action report. The scenario must evolve over ${params.timesteps} timesteps.
-    **Formatting is critical.** For each timestep, structure the narrative using these exact Markdown subheadings:
+    **Formatting is critical.** The entire narrative must be a single markdown string. Each timestep must be clearly separated by a markdown header like "## Timestep 1" or "**Timestep 1**". Under each timestep header, structure the narrative using these exact Markdown subheadings:
     - **SITUATION:** Brief overview of the current state.
     - **ACTION:** Detailed description of the attacker's actions and techniques used.
     - **IMPACT:** Analysis of the effect on the target and the RF environment.
     - **OBSERVATIONS:** Key signals or anomalies to look for in the spectrum data.
     Use concise bullet points under each subheading where appropriate. The tone must be technical and analytical.
+
 2.  **Generate Spectrum Data:** For each timestep, create a corresponding set of RF spectrum data points (frequency in MHz, power in dBm) that visually represent the events in the scenario. The data should be plausible and reflect the chosen environment, interference, and deception target.
+
+3.  **Perform Threat Assessment:** For each timestep, analyze the spectrum data you just generated. Identify any anomalous signals (jammers, unexpected carriers, hopping signals, etc.). For each anomaly found, provide:
+    - A concise **description**.
+    - Its **start/end frequency range**.
+    - A tactical **classification** (e.g., 'Jamming', 'Spoofing', 'UAV Downlink').
+    - A suggested tactical **countermeasure** (e.g., 'Deploy targeted jamming', 'Initiate signal triangulation').
+    If no anomalies are present for a timestep, return an empty array for the anomalies.
 
 **Simulation Parameters:**
 *   **Environment Type:** ${params.environment.type}
@@ -101,7 +130,7 @@ ${fileContent}
 
     prompt += `
 **Output Requirements:**
-Provide your response as a single, valid JSON object that strictly adheres to the provided schema. The 'scenario' should be a well-formatted Markdown string. The 'visualizerData' must be an array of arrays, with one inner array of spectrum data for each of the ${params.timesteps} timesteps. Ensure the data reflects the events in the scenario (e.g., a jamming signal should appear as a high-power, wide-band signal in the data). Do not include any explanatory text outside of the JSON object.
+Provide your response as a single, valid JSON object that strictly adheres to the provided schema. The 'scenario' should be a well-formatted Markdown string. The 'visualizerData' must be an array of objects, each containing 'spectrum' and 'anomalies' arrays, for each of the ${params.timesteps} timesteps. Ensure the data reflects the events in the scenario. Do not include any explanatory text outside of the JSON object.
 `;
     return prompt;
 };
@@ -110,12 +139,10 @@ Provide your response as a single, valid JSON object that strictly adheres to th
 export const generateDeceptionScenario = async (
     params: SimulationParams,
     file: File | null,
-    fileContent: string | null,
-    currentTimestep?: number,
-    existingScenario?: string
+    fileContent: string | null
 ): Promise<AnalysisResult> => {
 
-    const prompt = buildPrompt(params, file, fileContent, currentTimestep, existingScenario);
+    const prompt = buildPrompt(params, file, fileContent);
 
     try {
         const response = await ai.models.generateContent({
@@ -138,9 +165,6 @@ export const generateDeceptionScenario = async (
         }
 
         // Pre-process the JSON to fix a common generation error where a minus sign is not followed by a number.
-        // This regex finds a colon, optional whitespace, and a minus sign,
-        // but only if it's NOT followed by a digit (using a negative lookahead).
-        // It replaces `...:"-",...` with `...:"-0",...` which is valid JSON.
         const sanitizedJsonText = jsonText.replace(/:(\s*-\s*)(?![0-9])/g, ':$10');
 
         const result: AnalysisResult = JSON.parse(sanitizedJsonText);
@@ -154,13 +178,13 @@ export const generateDeceptionScenario = async (
              console.warn(`API returned ${result.visualizerData.length} timesteps, but ${params.timesteps} were requested. The scenario may be incomplete.`);
              // Pad the array if the AI didn't return enough timesteps
              while(result.visualizerData.length < params.timesteps) {
-                result.visualizerData.push([]);
+                result.visualizerData.push({ spectrum: [], anomalies: [] });
              }
         }
         
         // Ensure visualizerData is not empty if scenario is valid
         if (result.visualizerData.length === 0) {
-            result.visualizerData = Array(params.timesteps).fill([]);
+            result.visualizerData = Array(params.timesteps).fill({ spectrum: [], anomalies: [] });
         }
 
 
@@ -172,7 +196,7 @@ export const generateDeceptionScenario = async (
         // Return a structured error response that App.tsx can handle
         return {
             scenario: `**Error: Failed to generate scenario.**\n\n**Reason:** ${errorMessage}\n\nPlease check your API key, network connection, and the prompt details. The model may have been unable to generate a valid response for the given parameters.`,
-            visualizerData: Array(params.timesteps).fill([{ frequency: 0, power: 0 }])
+            visualizerData: Array(params.timesteps).fill({ spectrum: [{ frequency: 0, power: 0 }], anomalies: [] })
         };
     }
 };

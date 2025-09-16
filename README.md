@@ -1,101 +1,55 @@
+# PhantomBand: AI-Powered RF Threat Modeling & Analysis Platform
 
+**PhantomBand is an advanced, AI-driven platform designed for military-grade electronic warfare (EW) training, mission rehearsal, and signals intelligence (SIGINT) analysis.**
 
-# PhantomBand: Generative RF Environment Simulator
-
-**PhantomBand is a generative AI/ML system that simulates realistic Radio Frequency (RF) environments for advanced training, mission rehearsal, and cyber deception operations.**
-
-It provides a sophisticated "digital sandbox" where Electronic Warfare (EW) officers, Signals Intelligence (SIGINT) analysts, and cybersecurity professionals can model and interact with complex electromagnetic spectrum scenarios. By ingesting real-world signal data and leveraging the power of Google's Gemini AI, PhantomBand generates dynamic, multi-timestep simulations of electronic attacks, allowing users to develop and test countermeasures in a safe, controlled, and cost-effective environment.
+It functions as a high-fidelity **"digital adversary,"** capable of generating dynamic and realistic Radio Frequency (RF) threat scenarios. By grounding its simulations in real-world data and leveraging Google's Gemini AI as an analytical engine, PhantomBand moves beyond simple simulation. It provides operators with **actionable intelligence**, including automated threat classifications and suggested tactical countermeasures, creating an unparalleled environment for developing and mastering electronic warfare TTPs (Tactics, Techniques, and Procedures).
 
 ---
 
-## Key Features
+## Mission-Critical Capabilities
 
--   **Generative Scenario Creation:** Utilizes the Google Gemini API to create rich, narrative-driven deception scenarios that evolve over multiple timesteps.
--   **Advanced Environment Modeling:** Configure detailed environmental factors including signal propagation models (Free Space, Hata, Log-distance) and atmospheric conditions (Clear, Rainy, Foggy) for higher-fidelity simulations.
--   **Real Data Ingestion:** Analyze your own signal data by uploading `.csv` or `.txt` files. The AI uses this data as a baseline to create more realistic and relevant simulations.
--   **Real-time "What-If" Analysis:** Instantly observe the impact of changing environmental conditions. Adjust parameters like interference level or propagation models on-the-fly and see the results immediately.
--   **Enhanced Scenario Readability:** The generated scenario is presented in an interactive accordion view, with collapsible sections for each timestep and automatic syntax highlighting for key technical terms (frequencies, power levels), making complex narratives easy to digest.
--   **Interactive Data Visualization:**
-    -   **Dual Analysis Modes:** Toggle between the standard **Spectrum** view and a **Fast Fourier Transform (FFT)** view to perform cepstral analysis, revealing hidden periodicities within the signal data.
-    -   Switch between **Area**, **Line**, and **Bar** charts for comprehensive spectrum analysis.
-    -   Customize chart appearance with color pickers and line thickness controls.
-    -   Filter the view by frequency and power to focus on signals of interest.
--   **Temporal Playback Controls:** Play, pause, and scrub through the generated timesteps of the simulation to observe how the RF environment changes over time.
--   **Session History:** Automatically saves each simulation run. Revisit, compare, and reload previous scenarios and their results with a single click.
--   **Reliable Structured AI Output:** Enforces a strict JSON schema on the AI's response, ensuring data integrity and eliminating runtime errors for a stable and predictable user experience.
+-   **AI-Powered Threat Assessment & Advisory:** The core of PhantomBand. The AI doesn't just simulate anomalies; it actively analyzes the spectrum to provide a full tactical assessment.
+    -   **Automated Threat Detection:** Intelligently identifies spectral anomalies like **jamming, spoofing, or unidentified signals** within the simulation.
+    -   **Tactical Classification:** Assigns a military-relevant classification to each detected threat (e.g., `UAV Downlink`, `GPS Spoofing`).
+    -   **Actionable Countermeasures:** Provides a suggested **tactical countermeasure** for each threat (e.g., `Initiate signal triangulation`), turning raw data into immediate, decision-quality intelligence.
+
+-   **Advanced "Waterfall" Spectrum Visualization:**
+    -   **Comprehensive Situational Awareness:** A multi-line chart displays the RF data for **all timesteps simultaneously**, providing a complete overview of the evolving electromagnetic environment.
+    -   **Interactive Analysis:** The timeline controls **instantly highlight** the active timestep on the chart, creating a seamless, intuitive link between the narrative, threat assessment, and its specific spectral signature.
+    -   **Visual Threat Highlighting:** Detected anomalies are automatically marked with a shaded overlay directly on the spectrum chart for rapid identification.
+
+-   **"Ground Truth" Data Ingestion:** Upload your own real-world `.csv` or `.txt` signal data. The AI performs a complete analysis of this data, using it as a **high-fidelity baseline** to ensure generated threat scenarios are realistic and relevant to your specific operational environment.
+
+-   **Analyst-Grade FFT Controls:**
+    -   Switch to a **Fast Fourier Transform (FFT)** view to perform deep-dive cepstral analysis on any timestep.
+    -   **Precision Control:** Fine-tune the analysis by adjusting the **FFT Size** for resolution and applying standard **Windowing Functions** (Rectangular, Hamming, Hann) to mitigate spectral leakage.
+
+-   **Professional Tactical Dashboard:**
+    -   **Intuitive Layout:** A side-by-side dashboard presents the spectrum chart and scenario analysis in a single, cohesive view for direct data-to-narrative correlation.
+    -   **Persistent Context:** A global **Status Bar** provides at-a-glance awareness of the core simulation parameters at all times.
+
+-   **Comprehensive After-Action Reporting:**
+    -   Generate and download a complete `.txt` **after-action report** with a single click, containing all parameters, the full narrative, and a detailed summary of all detected threats.
 
 ---
 
 ## Technology Stack
 
 -   **Frontend:** React, TypeScript
--   **AI Engine:** Google Gemini API (`gemini-2.5-flash`)
+-   **AI Engine & Analysis:** Google Gemini API (`gemini-2.5-flash`)
 -   **Styling:** Tailwind CSS
--   **Charting Library:** Recharts
+-   **Data Visualization:** Recharts
 
 ---
 
-## Installation and Setup
+## Analyst Workflow
 
-Follow these steps to get PhantomBand running on your local machine.
+The platform is designed for a seamless workflow from data to decision.
 
-### Prerequisites
-
--   [Node.js](https://nodejs.org/) (v18 or later recommended)
--   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/your-username/phantomband.git
-cd phantomband
-```
-
-### 2. Install Dependencies
-
-```bash
-npm install
-# or
-yarn install
-```
-
-### 3. Set Up Your API Key
-
-PhantomBand requires a Google Gemini API key to function.
-
-1.  Create a file named `.env` in the root of the project directory.
-2.  Add your API key to this file:
-
-    ```
-    # .env
-    API_KEY=YOUR_GEMINI_API_KEY_HERE
-    ```
-
-    **IMPORTANT:** The application is hard-coded to read the key from this specific environment variable (`process.env.API_KEY`). Do not change the variable name.
-
-### 4. Run the Development Server
-
-```bash
-npm start
-# or
-yarn start
-```
-
-The application should now be running and accessible at `http://localhost:3000` (or another port if specified).
-
----
-
-## Usage Guide
-
-1.  **Configure Simulation:** Use the controls on the left-hand panel to set the initial parameters for your scenario (Environment, Propagation Model, Interference Level, Deception Target, Timesteps).
-2.  **Upload Signal Data (Optional):** Click the "UPLOAD FILE" panel to select a `.csv` or `.txt` file containing signal data from your local machine. The AI will use this data to inform its generation process.
-3.  **Run Analysis:** Click the "RUN ANALYSIS" button. The application will send your configuration to the Gemini API and generate a new scenario.
-4.  **Review the Scenario:** Read the generated narrative in the "Generated Deception Scenario" panel. Expand and collapse timesteps for clarity. Notice how technical terms are highlighted for quick identification.
-5.  **Analyze the Spectrum:**
-    -   Use the **Data Visualizer** to view the RF spectrum for the current timestep.
-    -   Toggle between **Spectrum** and **FFT** analysis modes to get different perspectives on the data.
-    -   Use the **playback controls** (play/pause button and slider) to move through the different timesteps and observe changes.
-    -   Use the **filter controls** to narrow in on specific frequency or power ranges.
-    -   Change the **chart type** and **appearance** to suit your analysis needs.
-6.  **Perform "What-If" Analysis:** While the simulation is active, change any of the simulation parameters on the left. The simulation will automatically regenerate after a brief pause, allowing you to see the impact of your changes instantly.
-7.  **Revisit History:** Click the "HISTORY" tab to see a list of your previous runs. Click on any item to instantly load its parameters and results back into the application.
+| Step                      | Action                                                                                             | Outcome                                                                |
+| :------------------------ | :------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| **1. CONFIGURE MISSION**  | Set simulation parameters (Environment, Threat, etc.) and optionally upload a baseline data file.  | The operational context for the simulation is defined.                 |
+| **2. EXECUTE ANALYSIS**   | Click "RUN ANALYSIS" to task the AI engine.                                                        | A high-fidelity, multi-timestep scenario with threat assessment is generated. |
+| **3. ANALYZE & CORRELATE** | Use the timeline controls to scrub through the scenario.                                           | The "waterfall" chart, narrative, and threat advisory update in perfect sync. |
+| **4. DEEP DIVE**          | Switch to the FFT view and adjust parameters to conduct deep signal analysis on a specific timestep. | Deeper insights into signal characteristics are revealed.                |
+| **5. EXPORT & BRIEF**     | Click "Download Report" to generate a comprehensive text file.                                     | A complete after-action report is ready for archival or dissemination. |
