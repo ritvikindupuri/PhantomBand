@@ -8,6 +8,11 @@ It functions as a high-fidelity **"digital adversary,"** capable of generating d
 
 ## Mission-Critical Capabilities
 
+-   **Real RF Data Analysis & Interpretation:**
+    -   **Upload & Analyze:** Ingest real-world RF spectrum data from `.csv` or `.txt` files.
+    -   **AI-Powered Interpretation:** The Gemini AI analyzes the raw data, segments it into logical timesteps, and generates a plausible narrative explaining the observed signals and events.
+    -   **Automated Threat Assessment:** The same powerful threat assessment engine is applied to the uploaded data, automatically identifying and classifying anomalies within the user's own signal captures.
+
 -   **AI-Powered Threat Assessment & Advisory:** The core of PhantomBand. The AI doesn't just simulate anomalies; it actively analyzes the spectrum to provide a full tactical assessment.
     -   **Automated Threat Detection:** Intelligently identifies spectral anomalies like **jamming, spoofing, or unidentified signals** within the simulation.
     -   **Tactical Classification:** Assigns a military-relevant classification to each detected threat (e.g., `UAV Downlink`, `GPS Spoofing`).
@@ -46,7 +51,7 @@ The platform is designed for a seamless workflow from parameters to decision.
 
 | Step                      | Action                                                                                             | Outcome                                                                |
 | :------------------------ | :------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
-| **1. CONFIGURE MISSION**  | Set simulation parameters (Environment, Threat, etc.) in the controls panel.                       | The operational context for the simulation is defined.                 |
+| **1. DEFINE MISSION**  | **Either:** A) Set simulation parameters for a synthetic scenario. **Or:** B) Upload a real RF data file for analysis. | The operational context for the analysis is defined.                 |
 | **2. EXECUTE ANALYSIS**   | Click "RUN ANALYSIS" to task the AI engine.                                                        | A high-fidelity, multi-timestep scenario with threat assessment is generated. |
 | **3. ANALYZE & CORRELATE** | Use the timeline controls to scrub through the scenario.                                           | The "waterfall" chart, narrative, and threat advisory update in perfect sync. |
 | **4. DEEP DIVE**          | Switch to the FFT view and adjust parameters to conduct deep signal analysis on a specific timestep. | Deeper insights into signal characteristics are revealed.                |

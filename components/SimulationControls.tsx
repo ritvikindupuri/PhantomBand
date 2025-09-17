@@ -3,10 +3,13 @@ import React from 'react';
 import type { SimulationParams, EnvironmentParams } from '../types.ts';
 // Fix: Added .ts extension to module path.
 import { EnvironmentType, InterferenceLevel, DeceptionTarget, SignalPropagationModel, AtmosphericCondition } from '../types.ts';
+import { FileUpload } from './FileUpload.tsx';
 
 interface SimulationControlsProps {
   params: SimulationParams;
   onParamsChange: (params: SimulationParams) => void;
+  uploadedFile: File | null;
+  onFileChange: (file: File | null) => void;
 }
 
 const SelectControl: React.FC<{
@@ -14,13 +17,15 @@ const SelectControl: React.FC<{
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: object;
-}> = ({ label, value, onChange, options }) => (
+  disabled?: boolean;
+}> = ({ label, value, onChange, options, disabled = false }) => (
   <div>
     <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
     <select
       value={value}
       onChange={onChange}
-      className="w-full bg-base-300 border border-secondary/50 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-amber text-text-main"
+      disabled={disabled}
+      className="w-full bg-base-300 border border-secondary/50 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-amber text-text-main disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {Object.values(options).map((option) => (
         <option key={option} value={option} className="bg-base-300">{option}</option>
@@ -29,7 +34,9 @@ const SelectControl: React.FC<{
   </div>
 );
 
-export const SimulationControls: React.FC<SimulationControlsProps> = ({ params, onParamsChange }) => {
+export const SimulationControls: React.FC<SimulationControlsProps> = ({ params, onParamsChange, uploadedFile, onFileChange }) => {
+  const isAnalysisMode = params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA;
+
   const handleChange = <T,>(field: keyof SimulationParams, value: T) => {
     onParamsChange({ ...params, [field]: value });
   };
@@ -46,7 +53,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({ params, 
 
   return (
     <div className="space-y-6">
-      <fieldset className="control-fieldset">
+      <fieldset className="control-fieldset" disabled={isAnalysisMode}>
         <legend className="control-legend">Environment</legend>
         <div className="space-y-4">
             <SelectControl
@@ -78,15 +85,23 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({ params, 
                 value={params.interference}
                 onChange={(e) => handleChange('interference', e.target.value as InterferenceLevel)}
                 options={InterferenceLevel}
+                disabled={isAnalysisMode}
             />
             <SelectControl
                 label="Deception Target"
                 value={params.deceptionTarget}
-                onChange={(e) => handleChange('deceptionTarget', e.target.value as DeceptionTarget)}
+                onChange={(e) => {
+                    const newTarget = e.target.value as DeceptionTarget;
+                    // When user switches away from analysis mode, clear the uploaded file
+                    if (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && newTarget !== DeceptionTarget.ANALYZE_UPLOADED_DATA) {
+                        onFileChange(null);
+                    }
+                    handleChange('deceptionTarget', newTarget);
+                }}
                 options={DeceptionTarget}
             />
             {params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && (
-                <div>
+                <div className="animate-fade-in">
                 <label htmlFor="customPrompt" className="block text-sm font-medium text-text-secondary mb-1">
                     Custom Scenario Description
                 </label>
@@ -100,6 +115,11 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({ params, 
                 />
                 </div>
             )}
+            {isAnalysisMode && (
+                <div className="animate-fade-in">
+                    <FileUpload uploadedFile={uploadedFile} onFileChange={onFileChange} />
+                </div>
+            )}
         </div>
       </fieldset>
 
@@ -107,7 +127,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({ params, 
         <legend className="control-legend">Temporal Dynamics</legend>
         <div>
             <label htmlFor="timesteps" className="block text-sm font-medium text-text-secondary mb-2">
-            Timesteps
+            Timesteps {isAnalysisMode ? '(Segments for Analysis)' : ''}
             </label>
             <div className="flex items-center space-x-4">
             <input

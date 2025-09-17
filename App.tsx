@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { SimulationControls } from './components/SimulationControls';
@@ -21,6 +22,7 @@ const App: React.FC = () => {
         try {
             const savedHistory = localStorage.getItem('phantomBandHistory');
             return savedHistory ? JSON.parse(savedHistory) : [];
+        // Fix: Added braces to the catch block to fix syntax error.
         } catch (error) {
             console.error("Could not load history from localStorage", error);
             return [];
@@ -28,6 +30,7 @@ const App: React.FC = () => {
     });
     const [currentTimestep, setCurrentTimestep] = useState<number>(0);
     const [activeTab, setActiveTab] = useState<'controls' | 'history'>('controls');
+    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
     useEffect(() => {
         try {
@@ -42,7 +45,23 @@ const App: React.FC = () => {
         setCurrentTimestep(0);
         setAnalysisResult(null);
 
-        const result = await generateDeceptionScenario(params);
+        let fileContent: string | null = null;
+        if (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && uploadedFile) {
+            try {
+                fileContent = await uploadedFile.text();
+            } catch (error) {
+                console.error("Error reading file:", error);
+                const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+                setAnalysisResult({
+                    scenario: `**Error: Failed to read the uploaded file.**\n\n**Reason:** ${errorMessage}`,
+                    visualizerData: Array(params.timesteps).fill({ spectrum: [], anomalies: [] })
+                });
+                setIsLoading(false);
+                return;
+            }
+        }
+
+        const result = await generateDeceptionScenario(params, fileContent);
         setAnalysisResult(result);
 
         if (!result.scenario.startsWith('**Error:')) {
@@ -56,7 +75,7 @@ const App: React.FC = () => {
         }
 
         setIsLoading(false);
-    }, [params]);
+    }, [params, uploadedFile]);
 
     const handleRefresh = () => {
         setParams(INITIAL_SIMULATION_PARAMS);
@@ -64,6 +83,7 @@ const App: React.FC = () => {
         setCurrentTimestep(0);
         setIsLoading(false);
         setActiveTab('controls');
+        setUploadedFile(null);
     };
 
     const handleHistorySelect = (item: HistoryItem) => {
@@ -71,6 +91,7 @@ const App: React.FC = () => {
         setAnalysisResult({ scenario: item.scenario, visualizerData: item.visualizerData });
         setCurrentTimestep(0);
         setActiveTab('controls');
+        setUploadedFile(null); // Clear file when loading from history
     };
 
     const handleClearHistory = () => {
@@ -88,14 +109,19 @@ const App: React.FC = () => {
         report += `----------------------------------------\n`;
         report += ` I. SIMULATION PARAMETERS\n`;
         report += `----------------------------------------\n`;
-        report += `Environment: ${params.environment.type}\n`;
-        report += `Propagation Model: ${params.environment.propagationModel}\n`;
-        report += `Atmospheric Condition: ${params.environment.atmosphericCondition}\n`;
-        report += `Interference Level: ${params.interference}\n`;
-        report += `Deception Target: ${params.deceptionTarget}\n`;
+        report += `Analysis Mode: ${params.deceptionTarget}\n`;
+        if (params.deceptionTarget !== DeceptionTarget.ANALYZE_UPLOADED_DATA) {
+            report += `Environment: ${params.environment.type}\n`;
+            report += `Propagation Model: ${params.environment.propagationModel}\n`;
+            report += `Atmospheric Condition: ${params.environment.atmosphericCondition}\n`;
+            report += `Interference Level: ${params.interference}\n`;
+        }
         report += `Timesteps: ${params.timesteps}\n`;
         if (params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && params.customPrompt) {
             report += `Custom Prompt: ${params.customPrompt}\n`;
+        }
+        if (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && uploadedFile) {
+            report += `Analyzed File: ${uploadedFile.name}\n`;
         }
         report += `\n`;
 
@@ -133,8 +159,18 @@ const App: React.FC = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
+    
+    const handleFileChange = (file: File | null) => {
+        setUploadedFile(file);
+        if (file) {
+            // For better UX, automatically switch to the correct mode when a file is selected.
+            setParams(prev => ({ ...prev, deceptionTarget: DeceptionTarget.ANALYZE_UPLOADED_DATA }));
+        }
+    };
 
-    const isRunDisabled = isLoading || (params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && !params.customPrompt);
+    const isRunDisabled = isLoading || 
+        (params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && !params.customPrompt) ||
+        (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && !uploadedFile);
 
 
     return (
@@ -156,7 +192,12 @@ const App: React.FC = () => {
                         
                         {activeTab === 'controls' && (
                             <div className="space-y-6 animate-fade-in">
-                                <SimulationControls params={params} onParamsChange={setParams} />
+                                <SimulationControls 
+                                    params={params} 
+                                    onParamsChange={setParams} 
+                                    uploadedFile={uploadedFile}
+                                    onFileChange={handleFileChange}
+                                />
                                 <button
                                     onClick={handleRunAnalysis}
                                     disabled={isRunDisabled}
@@ -166,6 +207,7 @@ const App: React.FC = () => {
                                     <span>{isLoading ? 'ANALYZING...' : 'RUN ANALYSIS'}</span>
                                 </button>
                                 {isRunDisabled && !isLoading && params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && <p className="text-xs text-center text-text-secondary/70">Please provide a custom scenario description.</p>}
+                                {isRunDisabled && !isLoading && params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && <p className="text-xs text-center text-text-secondary/70">Please upload a file to analyze.</p>}
                             </div>
                         )}
                         

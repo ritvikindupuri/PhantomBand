@@ -75,8 +75,45 @@ const responseSchema = {
 };
 
 const buildPrompt = (
-    params: SimulationParams
+    params: SimulationParams,
+    fileContent: string | null
 ): string => {
+    if (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && fileContent) {
+        // This is the new prompt for analyzing uploaded data
+        return `
+You are PhantomBand, a specialized AI for advanced RF signal analysis and electronic warfare simulation. Your task is to analyze the provided raw RF spectrum data, interpret it, and generate a scenario that explains the data, including a threat assessment.
+
+**Provided RF Data:**
+The following is a raw data capture, likely in a time-series format (e.g., CSV). Each line may represent a frequency bin at a specific time.
+\`\`\`
+${fileContent.substring(0, 20000)} 
+\`\`\`
+*Note: The provided data may have been truncated for brevity.*
+
+**Analysis Request:**
+
+1.  **Interpret & Segment Data:** Analyze the raw data to identify patterns, signal changes, and key events. Based on your analysis, segment the entire dataset into ${params.timesteps} logical timesteps.
+2.  **Generate a Deception Scenario:** Create a narrative that explains what is happening in the data. This narrative must align with the segmented timesteps and the signals you identify.
+    **Formatting is critical.** The entire narrative must be a single markdown string. Each timestep must be clearly separated by a markdown header like "## Timestep 1". Under each header, use these exact subheadings:
+    - **SITUATION:** Overview of the state based on the data for this timestep.
+    - **ACTION:** Inferred actions of actors (e.g., attacker, target) that would produce these signals.
+    - **IMPACT:** The effect observed in the provided RF data.
+    - **OBSERVATIONS:** Specific signals or anomalies from the data to note.
+3.  **Structure the Data:** For each timestep, extract the corresponding frequency and power data points from the raw data and format them into the required 'spectrum' array structure. The output data must be a faithful representation of the input data.
+4.  **Perform Threat Assessment:** For each timestep, analyze the structured data. Identify any anomalous signals (jammers, unexpected carriers, etc.). For each anomaly, provide a concise description, start/end frequency, a tactical classification, and a suggested countermeasure. If no anomalies are present for a timestep, return an empty array for the anomalies.
+
+**Assumed Context (for interpretation):**
+*   **Environment Type:** ${params.environment.type}
+*   **Signal Propagation Model:** ${params.environment.propagationModel}
+*   **Atmospheric Conditions:** ${params.environment.atmosphericCondition}
+*   **Interference Level (Baseline):** ${params.interference}
+
+**Output Requirements:**
+Provide your response as a single, valid JSON object that strictly adheres to the provided schema. The 'scenario' must explain the provided data. The 'visualizerData' array must be populated by structuring the provided data into ${params.timesteps} timesteps. Do not invent spectrum data; only structure what is provided.
+`;
+    }
+
+    // This is the original prompt for simulation
     let prompt = `
 You are PhantomBand, a specialized AI for advanced RF signal analysis and electronic warfare simulation. Your task is to generate a realistic and detailed deception scenario based on the user's specifications, including performing automated threat assessment.
 
@@ -121,10 +158,11 @@ Provide your response as a single, valid JSON object that strictly adheres to th
 
 
 export const generateDeceptionScenario = async (
-    params: SimulationParams
+    params: SimulationParams,
+    fileContent: string | null = null,
 ): Promise<AnalysisResult> => {
 
-    const prompt = buildPrompt(params);
+    const prompt = buildPrompt(params, fileContent);
 
     try {
         const response = await ai.models.generateContent({

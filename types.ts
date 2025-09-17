@@ -34,6 +34,7 @@ export enum DeceptionTarget {
   EMULATE_GHOST_BLE_BEACON = 'Emulate Ghost BLE Beacon',
   GENERATE_DECOY_IOT_TRAFFIC = 'Generate Decoy IoT Traffic',
   GENERATE_CUSTOM_SCENARIO = 'Generate Custom Scenario',
+  ANALYZE_UPLOADED_DATA = 'Analyze Uploaded RF Data',
 }
 
 export interface EnvironmentParams {
