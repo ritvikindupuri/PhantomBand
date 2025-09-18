@@ -35,7 +35,7 @@ const App: React.FC = () => {
     const [mode, setMode] = useState<AnalysisMode>('generate');
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [fileAnalysisReport, setFileAnalysisReport] = useState<FileAnalysisReport | null>(null);
-    const [fileAnalysisError, setFileAnalysisError] = useState<string | null>(null);
+    const [fileAnalysisError, setFileAnalysisError] = useState<Error | string | null>(null);
 
     useEffect(() => {
         try {
@@ -66,16 +66,19 @@ const App: React.FC = () => {
         setFileAnalysisError(null);
     };
 
-    const handleRunFileAnalysis = async (fileToAnalyze: File | Blob) => {
+    const handleRunFileAnalysis = async (
+        fileToAnalyze: File | Blob,
+        options?: { manualFreqIndex?: number; manualPowerIndex?: number }
+    ) => {
         setFileAnalysisReport(null);
         setFileAnalysisError(null);
 
         try {
-            const report = await parseAndAnalyzeCsv(fileToAnalyze);
+            const report = await parseAndAnalyzeCsv(fileToAnalyze, options);
             setFileAnalysisReport(report);
         } catch (error) {
             console.error("Error analyzing file:", error);
-            setFileAnalysisError(error instanceof Error ? error.message : "An unknown parsing error occurred.");
+            setFileAnalysisError(error instanceof Error ? error : new Error("An unknown parsing error occurred."));
             setFileAnalysisReport(null);
         }
     };

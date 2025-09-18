@@ -11,10 +11,10 @@ interface SimulationControlsProps {
   mode: AnalysisMode;
   onModeChange: (mode: AnalysisMode) => void;
   onFileChange: (file: File | null) => void;
-  onRunFileAnalysis: (file: File | Blob) => void;
+  onRunFileAnalysis: (file: File | Blob, options?: { manualFreqIndex?: number; manualPowerIndex?: number }) => void;
   uploadedFile: File | null;
   analysisReport: FileAnalysisReport | null;
-  analysisError: string | null;
+  analysisError: Error | string | null;
 }
 
 const SelectControl: React.FC<{
