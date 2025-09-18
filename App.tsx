@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { SimulationControls } from './components/SimulationControls';
@@ -10,8 +9,9 @@ import { Loader } from './components/Loader';
 import { SettingsIcon } from './components/icons/SettingsIcon';
 import { HistoryIcon } from './components/icons/HistoryIcon';
 import { generateDeceptionScenario } from './services/geminiService';
+import { parseAndAnalyzeCsv } from './utils/csvParser';
 import { INITIAL_SIMULATION_PARAMS } from './constants';
-import type { SimulationParams, AnalysisResult, HistoryItem } from './types';
+import type { SimulationParams, AnalysisResult, HistoryItem, FileAnalysisReport, AnalysisMode } from './types';
 import { DeceptionTarget } from './types';
 
 const App: React.FC = () => {
@@ -22,15 +22,17 @@ const App: React.FC = () => {
         try {
             const savedHistory = localStorage.getItem('phantomBandHistory');
             return savedHistory ? JSON.parse(savedHistory) : [];
-        // Fix: Added braces to the catch block to fix syntax error.
         } catch (error) {
             console.error("Could not load history from localStorage", error);
             return [];
         }
     });
     const [currentTimestep, setCurrentTimestep] = useState<number>(0);
-    const [activeTab, setActiveTab] = useState<'controls' | 'history'>('controls');
+    const [activeControlTab, setActiveControlTab] = useState<'controls' | 'history'>('controls');
+    const [mode, setMode] = useState<AnalysisMode>('generate');
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [fileAnalysisReport, setFileAnalysisReport] = useState<FileAnalysisReport | null>(null);
+    const [fileAnalysisError, setFileAnalysisError] = useState<string | null>(null);
 
     useEffect(() => {
         try {
@@ -39,59 +41,93 @@ const App: React.FC = () => {
             console.error("Could not save history to localStorage", error);
         }
     }, [history]);
+    
+    // When mode changes, reset file/report state and adjust deception target
+    useEffect(() => {
+        if (mode === 'generate') {
+            setUploadedFile(null);
+            setFileAnalysisReport(null);
+            setFileAnalysisError(null);
+            // If the current target is the analysis one, revert to default
+            if (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA) {
+                setParams(p => ({ ...p, deceptionTarget: INITIAL_SIMULATION_PARAMS.deceptionTarget }));
+            }
+        } else { // mode === 'analyze'
+             setParams(p => ({ ...p, deceptionTarget: DeceptionTarget.ANALYZE_UPLOADED_DATA }));
+        }
+    }, [mode]);
+
+    const handleFileChange = async (file: File | null) => {
+        setUploadedFile(file);
+        setFileAnalysisReport(null);
+        setFileAnalysisError(null);
+        
+        if (file) {
+            try {
+                const report = await parseAndAnalyzeCsv(file);
+                setFileAnalysisReport(report);
+            } catch (error) {
+                console.error("Error analyzing file:", error);
+                setFileAnalysisError(error instanceof Error ? error.message : "An unknown parsing error occurred.");
+                setFileAnalysisReport(null);
+            }
+        }
+    };
 
     const handleRunAnalysis = useCallback(async () => {
         setIsLoading(true);
         setCurrentTimestep(0);
         setAnalysisResult(null);
 
-        let fileContent: string | null = null;
-        if (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && uploadedFile) {
-            try {
-                fileContent = await uploadedFile.text();
-            } catch (error) {
-                console.error("Error reading file:", error);
-                const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-                setAnalysisResult({
-                    scenario: `**Error: Failed to read the uploaded file.**\n\n**Reason:** ${errorMessage}`,
-                    visualizerData: Array(params.timesteps).fill({ spectrum: [], anomalies: [] })
-                });
-                setIsLoading(false);
-                return;
+        let analysisContent: string | undefined = undefined;
+        let currentParams = params;
+
+        if (mode === 'analyze') {
+            if (fileAnalysisReport) {
+                analysisContent = JSON.stringify(fileAnalysisReport, null, 2);
             }
+            // Ensure deceptionTarget is correctly set for history item
+            currentParams = { ...params, deceptionTarget: DeceptionTarget.ANALYZE_UPLOADED_DATA };
         }
 
-        const result = await generateDeceptionScenario(params, fileContent);
+        const result = await generateDeceptionScenario(currentParams, analysisContent);
         setAnalysisResult(result);
 
         if (!result.scenario.startsWith('**Error:')) {
             const newHistoryItem: HistoryItem = {
                 id: new Date().toISOString(),
                 timestamp: new Date().toLocaleString(),
-                params,
+                params: currentParams,
                 ...result,
             };
             setHistory(prevHistory => [newHistoryItem, ...prevHistory.slice(0, 49)]); // Keep history to 50 items
         }
 
         setIsLoading(false);
-    }, [params, uploadedFile]);
+    }, [params, fileAnalysisReport, mode]);
 
     const handleRefresh = () => {
         setParams(INITIAL_SIMULATION_PARAMS);
         setAnalysisResult(null);
         setCurrentTimestep(0);
         setIsLoading(false);
-        setActiveTab('controls');
+        setActiveControlTab('controls');
+        setMode('generate');
         setUploadedFile(null);
+        setFileAnalysisReport(null);
+        setFileAnalysisError(null);
     };
 
     const handleHistorySelect = (item: HistoryItem) => {
         setParams(item.params);
         setAnalysisResult({ scenario: item.scenario, visualizerData: item.visualizerData });
         setCurrentTimestep(0);
-        setActiveTab('controls');
-        setUploadedFile(null); // Clear file when loading from history
+        if (item.params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA) {
+            setMode('analyze');
+        } else {
+            setMode('generate');
+        }
+        setActiveControlTab('controls');
     };
 
     const handleClearHistory = () => {
@@ -109,7 +145,7 @@ const App: React.FC = () => {
         report += `----------------------------------------\n`;
         report += ` I. SIMULATION PARAMETERS\n`;
         report += `----------------------------------------\n`;
-        report += `Analysis Mode: ${params.deceptionTarget}\n`;
+        report += `Deception Target: ${params.deceptionTarget}\n`;
         if (params.deceptionTarget !== DeceptionTarget.ANALYZE_UPLOADED_DATA) {
             report += `Environment: ${params.environment.type}\n`;
             report += `Propagation Model: ${params.environment.propagationModel}\n`;
@@ -159,18 +195,10 @@ const App: React.FC = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     };
-    
-    const handleFileChange = (file: File | null) => {
-        setUploadedFile(file);
-        if (file) {
-            // For better UX, automatically switch to the correct mode when a file is selected.
-            setParams(prev => ({ ...prev, deceptionTarget: DeceptionTarget.ANALYZE_UPLOADED_DATA }));
-        }
-    };
 
     const isRunDisabled = isLoading || 
-        (params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && !params.customPrompt) ||
-        (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && !uploadedFile);
+        (mode === 'generate' && params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && !params.customPrompt) ||
+        (mode === 'analyze' && !fileAnalysisReport);
 
 
     return (
@@ -180,23 +208,26 @@ const App: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <aside className="lg:col-span-1 space-y-6 tactical-panel bg-base-100 p-6 rounded-md border border-secondary/20">
                         <div className="flex border-b border-secondary/20 mb-4 space-x-2">
-                            <button onClick={() => setActiveTab('controls')} className={`tab-button ${activeTab === 'controls' ? 'tab-button-active' : ''}`}>
+                            <button onClick={() => setActiveControlTab('controls')} className={`tab-button ${activeControlTab === 'controls' ? 'tab-button-active' : ''}`}>
                                 <SettingsIcon className="w-5 h-5 mr-2" />
                                 Controls
                             </button>
-                            <button onClick={() => setActiveTab('history')} className={`tab-button ${activeTab === 'history' ? 'tab-button-active' : ''}`}>
+                            <button onClick={() => setActiveControlTab('history')} className={`tab-button ${activeControlTab === 'history' ? 'tab-button-active' : ''}`}>
                                 <HistoryIcon className="w-5 h-5 mr-2" />
                                 History
                             </button>
                         </div>
                         
-                        {activeTab === 'controls' && (
+                        {activeControlTab === 'controls' && (
                             <div className="space-y-6 animate-fade-in">
                                 <SimulationControls 
                                     params={params} 
-                                    onParamsChange={setParams} 
-                                    uploadedFile={uploadedFile}
+                                    onParamsChange={setParams}
+                                    mode={mode}
+                                    onModeChange={setMode}
                                     onFileChange={handleFileChange}
+                                    analysisReport={fileAnalysisReport}
+                                    analysisError={fileAnalysisError}
                                 />
                                 <button
                                     onClick={handleRunAnalysis}
@@ -204,14 +235,14 @@ const App: React.FC = () => {
                                     className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                                 >
                                     {isLoading && <Loader size="sm" />}
-                                    <span>{isLoading ? 'ANALYZING...' : 'RUN ANALYSIS'}</span>
+                                    <span>{isLoading ? 'ANALYZING...' : (mode === 'analyze' ? 'ANALYZE FILE' : 'RUN ANALYSIS')}</span>
                                 </button>
-                                {isRunDisabled && !isLoading && params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && <p className="text-xs text-center text-text-secondary/70">Please provide a custom scenario description.</p>}
-                                {isRunDisabled && !isLoading && params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && <p className="text-xs text-center text-text-secondary/70">Please upload a file to analyze.</p>}
+                                {mode === 'generate' && params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && isRunDisabled && !isLoading && <p className="text-xs text-center text-text-secondary/70">Please provide a custom scenario description.</p>}
+                                {/* The 'analyze' mode feedback is now handled inside the FileUpload component */}
                             </div>
                         )}
                         
-                        {activeTab === 'history' && (
+                        {activeControlTab === 'history' && (
                             <div className="animate-fade-in">
                                 <HistoryPanel history={history} onSelect={handleHistorySelect} onClear={handleClearHistory} />
                             </div>

@@ -81,3 +81,22 @@ export interface HistoryItem extends AnalysisResult {
   timestamp: string;
   params: SimulationParams;
 }
+
+// New type for the detailed client-side file analysis report
+export interface FileAnalysisReport {
+    fileName: string;
+    rowCount: number;
+    columnCount: number;
+    headers: string[];
+    stats: {
+        frequency: { min: number; max: number };
+        power: { min: number; max: number; avg: number };
+    };
+    samples: {
+        firstRows: SpectrumDataPoint[];
+        lastRows: SpectrumDataPoint[];
+        peakPowerRows: SpectrumDataPoint[];
+    };
+}
+
+export type AnalysisMode = 'generate' | 'analyze';

@@ -81,7 +81,8 @@ export const DataVisualizer: React.FC<DataVisualizerProps> = ({
     const totalTimesteps = visualizerData?.length || 0;
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        // Fix: Replaced NodeJS.Timeout with ReturnType<typeof setInterval> for browser compatibility.
+        let interval: ReturnType<typeof setInterval>;
         if (isPlaying && totalTimesteps > 1) {
             interval = setInterval(() => {
                 onTimestepChange(prev => (prev + 1) % totalTimesteps);
