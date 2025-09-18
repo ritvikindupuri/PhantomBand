@@ -16,11 +16,11 @@ const isNumeric = (str: string): boolean => {
 };
 
 /**
- * Reads a File object, parses its CSV content, and generates a statistical report.
- * @param file The CSV or TXT file to analyze.
+ * Reads a File or Blob object, parses its CSV content, and generates a statistical report.
+ * @param file The CSV or TXT file or blob to analyze.
  * @returns A promise that resolves to a FileAnalysisReport.
  */
-export const parseAndAnalyzeCsv = (file: File): Promise<FileAnalysisReport> => {
+export const parseAndAnalyzeCsv = (file: File | Blob): Promise<FileAnalysisReport> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
 
@@ -165,7 +165,7 @@ export const parseAndAnalyzeCsv = (file: File): Promise<FileAnalysisReport> => {
                 const finalHeaders = headerValues || ['Frequency', 'Power'];
 
                 const report: FileAnalysisReport = {
-                    fileName: file.name,
+                    fileName: (file instanceof File) ? file.name : 'File Segment',
                     rowCount: dataLines.length,
                     columnCount: finalHeaders.length,
                     headers: finalHeaders,

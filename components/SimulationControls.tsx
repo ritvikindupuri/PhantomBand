@@ -11,6 +11,8 @@ interface SimulationControlsProps {
   mode: AnalysisMode;
   onModeChange: (mode: AnalysisMode) => void;
   onFileChange: (file: File | null) => void;
+  onRunFileAnalysis: (file: File | Blob) => void;
+  uploadedFile: File | null;
   analysisReport: FileAnalysisReport | null;
   analysisError: string | null;
 }
@@ -49,7 +51,17 @@ const TabButton: React.FC<{ label: string; isActive: boolean; onClick: () => voi
 );
 
 
-export const SimulationControls: React.FC<SimulationControlsProps> = ({ params, onParamsChange, mode, onModeChange, onFileChange, analysisReport, analysisError }) => {
+export const SimulationControls: React.FC<SimulationControlsProps> = ({ 
+    params, 
+    onParamsChange, 
+    mode, 
+    onModeChange, 
+    onFileChange, 
+    onRunFileAnalysis,
+    uploadedFile,
+    analysisReport, 
+    analysisError 
+}) => {
   const handleChange = <T,>(field: keyof SimulationParams, value: T) => {
     onParamsChange({ ...params, [field]: value });
   };
@@ -159,7 +171,13 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({ params, 
 
       {mode === 'analyze' && (
           <div className="space-y-6 animate-fade-in">
-              <FileUpload onFileChange={onFileChange} analysisReport={analysisReport} analysisError={analysisError} />
+              <FileUpload 
+                onFileChange={onFileChange} 
+                onRunFileAnalysis={onRunFileAnalysis}
+                uploadedFile={uploadedFile}
+                analysisReport={analysisReport} 
+                analysisError={analysisError} 
+              />
                <fieldset className="control-fieldset">
                   <legend className="control-legend">Analysis Parameters</legend>
                   <div>

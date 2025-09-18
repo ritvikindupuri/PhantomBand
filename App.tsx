@@ -14,6 +14,9 @@ import { INITIAL_SIMULATION_PARAMS } from './constants';
 import type { SimulationParams, AnalysisResult, HistoryItem, FileAnalysisReport, AnalysisMode } from './types';
 import { DeceptionTarget } from './types';
 
+// The maximum size of a file segment to analyze in memory.
+export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+
 const App: React.FC = () => {
     const [params, setParams] = useState<SimulationParams>(INITIAL_SIMULATION_PARAMS);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -57,22 +60,26 @@ const App: React.FC = () => {
         }
     }, [mode]);
 
-    const handleFileChange = async (file: File | null) => {
+    const handleFileChange = (file: File | null) => {
         setUploadedFile(file);
         setFileAnalysisReport(null);
         setFileAnalysisError(null);
-        
-        if (file) {
-            try {
-                const report = await parseAndAnalyzeCsv(file);
-                setFileAnalysisReport(report);
-            } catch (error) {
-                console.error("Error analyzing file:", error);
-                setFileAnalysisError(error instanceof Error ? error.message : "An unknown parsing error occurred.");
-                setFileAnalysisReport(null);
-            }
+    };
+
+    const handleRunFileAnalysis = async (fileToAnalyze: File | Blob) => {
+        setFileAnalysisReport(null);
+        setFileAnalysisError(null);
+
+        try {
+            const report = await parseAndAnalyzeCsv(fileToAnalyze);
+            setFileAnalysisReport(report);
+        } catch (error) {
+            console.error("Error analyzing file:", error);
+            setFileAnalysisError(error instanceof Error ? error.message : "An unknown parsing error occurred.");
+            setFileAnalysisReport(null);
         }
     };
+
 
     const handleRunAnalysis = useCallback(async () => {
         setIsLoading(true);
@@ -156,8 +163,8 @@ const App: React.FC = () => {
         if (params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && params.customPrompt) {
             report += `Custom Prompt: ${params.customPrompt}\n`;
         }
-        if (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && uploadedFile) {
-            report += `Analyzed File: ${uploadedFile.name}\n`;
+        if (params.deceptionTarget === DeceptionTarget.ANALYZE_UPLOADED_DATA && fileAnalysisReport) {
+            report += `Analyzed File: ${fileAnalysisReport.fileName}\n`;
         }
         report += `\n`;
 
@@ -198,7 +205,7 @@ const App: React.FC = () => {
 
     const isRunDisabled = isLoading || 
         (mode === 'generate' && params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && !params.customPrompt) ||
-        (mode === 'analyze' && !fileAnalysisReport);
+        (mode === 'analyze' && (!fileAnalysisReport || !!fileAnalysisError));
 
 
     return (
@@ -226,6 +233,8 @@ const App: React.FC = () => {
                                     mode={mode}
                                     onModeChange={setMode}
                                     onFileChange={handleFileChange}
+                                    onRunFileAnalysis={handleRunFileAnalysis}
+                                    uploadedFile={uploadedFile}
                                     analysisReport={fileAnalysisReport}
                                     analysisError={fileAnalysisError}
                                 />
@@ -235,7 +244,7 @@ const App: React.FC = () => {
                                     className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                                 >
                                     {isLoading && <Loader size="sm" />}
-                                    <span>{isLoading ? 'ANALYZING...' : (mode === 'analyze' ? 'ANALYZE FILE' : 'RUN ANALYSIS')}</span>
+                                    <span>{isLoading ? 'ANALYZING...' : (mode === 'analyze' ? 'ANALYZE & GENERATE SCENARIO' : 'RUN ANALYSIS')}</span>
                                 </button>
                                 {mode === 'generate' && params.deceptionTarget === DeceptionTarget.GENERATE_CUSTOM_SCENARIO && isRunDisabled && !isLoading && <p className="text-xs text-center text-text-secondary/70">Please provide a custom scenario description.</p>}
                                 {/* The 'analyze' mode feedback is now handled inside the FileUpload component */}
