@@ -19,8 +19,7 @@ PhantomBand is a client-side **Single Page Application (SPA)** built with **Reac
 ### 2.1. High-Level Diagram
 
 ```
-<img width="2144" height="1072" alt="diagram-export-9-22-2025-9_42_23-AM" src="https://github.com/user-attachments/assets/83ebc89f-b53a-4f48-974f-490e06d49722" />
-
+C:\Users\ritvi\Downloads\diagram-export-9-22-2025-9_42_23-AM.png
 ```
 
 ### 2.2. Architectural Principles
