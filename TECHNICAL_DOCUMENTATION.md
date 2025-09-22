@@ -19,22 +19,8 @@ PhantomBand is a client-side **Single Page Application (SPA)** built with **Reac
 ### 2.1. High-Level Diagram
 
 ```
-+---------------------------------+      +-------------------------------------------+      +--------------------------+
-|       React Client (Browser)    |----->|         Data Analysis Workflow            |----->|   Google Gemini API      |
-|                                 |      |                                           |      |   (gemini-2.5-flash)     |
-| +-----------------------------+ |      | IF (mode === 'analyze') THEN              |      |                          |
-| | App.tsx (State)             | |      |  1. FileUpload.tsx -> slice(0, 50MB)      |      |                          |
-| |-----------------------------| |      |  2. csvParser.ts -> FileAnalysisReport    |----->| (Prompt + JSON Report)   |
-| | Controls |   Visualizer     | |      | ELSE (mode === 'generate') THEN           |      |                          |
-| |----------+------------------| |      |  1. Build prompt from user params         |----->| (Prompt)                 |
-| | Scenario |    History       | |      +-------------------------------------------+      +--------------------------+
-| +-----------------------------+ |                                                                    | (Structured JSON)
-+---------------------------------+                                                                    |
-       |  (User Interaction)                                                                           |
-       |                                                                                                V
-+------+-----------+                                                                    +-------------------------------+
-|      Analyst     | <-----------------(State Update & Re-render)-----------------------+       App.tsx State           |
-+------------------+                                                                    +-------------------------------+
+<img width="2144" height="1072" alt="diagram-export-9-22-2025-9_42_23-AM" src="https://github.com/user-attachments/assets/83ebc89f-b53a-4f48-974f-490e06d49722" />
+
 ```
 
 ### 2.2. Architectural Principles
