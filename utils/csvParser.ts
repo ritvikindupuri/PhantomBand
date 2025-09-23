@@ -16,22 +16,17 @@ export class ColumnDetectionError extends Error {
 }
 
 /**
- * Parses a string row into an array of strings. Handles various delimiters.
- */
-const parseCsvRow = (row: string): string[] => {
-    return row.trim().split(/[\t,; ]+/);
-};
-
-/**
- * Checks if a string looks like a number.
+ * Checks if a string looks like a number, handling thousands separators.
  */
 const isNumeric = (str: string): boolean => {
     if (typeof str !== 'string' || str.trim() === '') return false;
-    return !isNaN(parseFloat(str)) && isFinite(Number(str));
+    const numStr = str.replace(/,/g, '');
+    return !isNaN(parseFloat(numStr)) && isFinite(Number(numStr));
 };
 
+
 /**
- * Cleans a string value and converts it to a float.
+ * Cleans a string value and converts it to a float. Handles thousands separators and units.
  * @param value The string value from a cell.
  * @returns A number, or NaN if parsing fails.
  */
@@ -39,9 +34,11 @@ const cleanAndParseFloat = (value: string | undefined): number => {
     if (!value) return NaN;
     const cleanedValue = value
         .trim()
+        .replace(/,/g, '') // Remove thousands separators
         .toLowerCase()
         .replace(/(mhz|khz|ghz|hz|dbm|db|mw|pwr)$/i, '')
         .trim();
+    if (cleanedValue === '') return NaN;
     return parseFloat(cleanedValue);
 };
 
@@ -73,6 +70,35 @@ export const parseAndAnalyzeCsv = (file: File | Blob, options: ParseOptions = {}
                     throw new Error("File must contain at least one data row.");
                 }
 
+                const detectDelimiter = (sampleLines: string[]): string => {
+                    const delimiters = [',', ';', '\t'];
+                    const stats = delimiters.map(d => {
+                        const counts = sampleLines.map(l => l.split(d).length).filter(c => c > 1);
+                        if (counts.length < Math.min(sampleLines.length, 5) * 0.5) return { d, avg: 0, stddev: Infinity, valid: false };
+                
+                        const avg = counts.reduce((a, b) => a + b) / counts.length;
+                        const stddev = Math.sqrt(counts.map(c => Math.pow(c - avg, 2)).reduce((a, b) => a + b) / counts.length);
+                        
+                        return { d, avg, stddev, valid: true };
+                    });
+
+                    const candidates = stats.filter(s => s.valid && s.stddev < 0.5);
+                    if (candidates.length > 0) {
+                        candidates.sort((a, b) => a.stddev - b.stddev);
+                        return candidates[0].d;
+                    }
+                    return ' ';
+                };
+
+                const delimiter = detectDelimiter(lines.slice(0, 50));
+                
+                const parseCsvRow = (row: string): string[] => {
+                    if (delimiter === ' ') {
+                        return row.trim().split(/\s+/);
+                    }
+                    return row.split(delimiter).map(s => s.trim());
+                };
+
                 let headerValues: string[] = [];
                 let dataLines: string[];
                 let freqIndex = options.manualFreqIndex ?? -1;
@@ -81,15 +107,23 @@ export const parseAndAnalyzeCsv = (file: File | Blob, options: ParseOptions = {}
                 let dataStartIndex = 0;
                 for (let i = 0; i < Math.min(10, lines.length); i++) {
                     const cols = parseCsvRow(lines[i]);
-                    if (cols.length >= 2) {
+                    // A data row likely starts with a number.
+                    if (cols.length >= 2 && isNumeric(cols[0])) {
                         dataStartIndex = i;
+                        // Check if the line *before* this is a non-numeric header
+                        if (i > 0) {
+                            const prevCols = parseCsvRow(lines[i - 1]);
+                            if (prevCols.length === cols.length && prevCols.some(val => !isNumeric(val))) {
+                                dataStartIndex = i - 1;
+                            }
+                        }
                         break;
                     }
                 }
-                
+
                 const relevantLines = lines.slice(dataStartIndex);
                  if (relevantLines.length < 1) {
-                    throw new Error("No valid data rows found after skipping metadata.");
+                    throw new Error("No valid data rows found.");
                 }
 
                 const firstLineValues = parseCsvRow(relevantLines[0]);
@@ -111,6 +145,7 @@ export const parseAndAnalyzeCsv = (file: File | Blob, options: ParseOptions = {}
                     const powerKeywords = ['power', 'dbm', 'db', 'level', 'amplitude', 'rssi', 'signal', 'strength', 'intensity', 'sig_str', 'pwr'];
                     
                     const scoreHeader = (header: string, keywords: string[]): number => {
+                        if (keywords.includes(header)) return 10;
                         return keywords.reduce((acc, kw) => acc + (header.includes(kw) ? 1 : 0), 0);
                     }
 
@@ -204,7 +239,7 @@ export const parseAndAnalyzeCsv = (file: File | Blob, options: ParseOptions = {}
                     throw new Error("No valid numerical data found. Please ensure columns are correctly formatted and delimited (e.g., comma, space, tab).");
                 }
                 
-                const sortedByPower = [...allData].sort((a, b) => a.power - b.power); 
+                const sortedByPower = [...allData].sort((a, b) => b.power - a.power);
                 const sortedByFreq = [...allData].sort((a, b) => a.frequency - b.frequency); 
 
                 const stats = {
@@ -213,13 +248,13 @@ export const parseAndAnalyzeCsv = (file: File | Blob, options: ParseOptions = {}
                         max: sortedByFreq[sortedByFreq.length - 1].frequency,
                     },
                     power: {
-                        min: sortedByPower[0].power,
-                        max: sortedByPower[sortedByPower.length - 1].power,
+                        min: sortedByPower[sortedByPower.length - 1].power,
+                        max: sortedByPower[0].power,
                         avg: powerSum / allData.length,
                     },
                 };
                 
-                const peakPowerRows = [...sortedByPower].reverse().slice(0, 10);
+                const peakPowerRows = sortedByPower.slice(0, 10);
 
                 const report: FileAnalysisReport = {
                     fileName: (file instanceof File) ? file.name : 'File Segment',

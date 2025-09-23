@@ -19,9 +19,22 @@ PhantomBand is a client-side **Single Page Application (SPA)** built with **Reac
 ### 2.1. High-Level Diagram
 
 ```
-<img src="./assets/Screenshot 2025-09-22 094450.png" width="1592" alt="PhantomBand System Architecture Diagram">
-
-
++---------------------------------+      +-------------------------------------------+      +--------------------------+
+|       React Client (Browser)    |----->|         Data Analysis Workflow            |----->|   Google Gemini API      |
+|                                 |      |                                           |      |   (gemini-2.5-flash)     |
+| +-----------------------------+ |      | IF (mode === 'analyze') THEN              |      |                          |
+| | App.tsx (State)             | |      |  1. FileUpload.tsx -> slice(0, 50MB)      |      |                          |
+| |-----------------------------| |      |  2. csvParser.ts -> FileAnalysisReport    |----->| (Prompt + JSON Report)   |
+| | Controls |   Visualizer     | |      | ELSE (mode === 'generate') THEN           |      |                          |
+| |----------+------------------| |      |  1. Build prompt from user params         |----->| (Prompt)                 |
+| | Scenario |    History       | |      +-------------------------------------------+      +--------------------------+
+| +-----------------------------+ |                                                                    | (Structured JSON)
++---------------------------------+                                                                    |
+       |  (User Interaction)                                                                           |
+       |                                                                                                V
++------+-----------+                                                                    +-------------------------------+
+|      Analyst     | <-----------------(State Update & Re-render)-----------------------+       App.tsx State           |
++------------------+                                                                    +-------------------------------+
 ```
 
 ### 2.2. Architectural Principles
