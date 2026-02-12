@@ -1,14 +1,10 @@
-// Fix: Added .ts extension to module path.
-import { SimulationParams, EnvironmentType, InterferenceLevel, DeceptionTarget, SignalPropagationModel, AtmosphericCondition } from './types.ts';
+import { SimulationParams, DetectionTarget } from './types.ts';
+
+export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
 
 export const INITIAL_SIMULATION_PARAMS: SimulationParams = {
-  environment: {
-    type: EnvironmentType.Urban,
-    propagationModel: SignalPropagationModel.Hata,
-    atmosphericCondition: AtmosphericCondition.Clear,
-  },
-  interference: InterferenceLevel.Low,
-  deceptionTarget: DeceptionTarget.SIMULATE_GPS_SPOOFING,
+  detectionTarget: DetectionTarget.GENERAL_ANOMALY,
   timesteps: 5,
+  sensitivity: 85, // Default sensitivity for LSTM MSE threshold
   customPrompt: '',
 };

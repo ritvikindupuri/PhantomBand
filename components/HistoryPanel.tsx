@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HistoryIcon } from './icons/HistoryIcon';
 import type { HistoryItem } from '../types';
@@ -20,7 +21,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onSelect, o
                 onClick={() => onSelect(item)}
                 className="p-2 bg-base-300 rounded-md cursor-pointer hover:bg-secondary/30 transition-colors"
               >
-                <p className="text-sm font-semibold text-text-main truncate">{item.params.deceptionTarget}</p>
+                {/* Fix: Property 'deceptionTarget' does not exist on type 'SimulationParams'. Use 'detectionTarget' instead. */}
+                <p className="text-sm font-semibold text-text-main truncate">{item.params.detectionTarget}</p>
                 <p className="text-xs text-text-secondary">{item.timestamp}</p>
               </li>
             ))}

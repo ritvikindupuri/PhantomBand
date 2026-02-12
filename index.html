@@ -39,13 +39,13 @@
       },
     }
     </script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <style>
       body {
         background-color: #111827;
         background-image: radial-gradient(at 10% 20%, hsla(215, 30%, 25%, 0.15) 0px, transparent 50%),
                           radial-gradient(at 80% 90%, hsla(38, 100%, 50%, 0.1) 0px, transparent 50%);
+        min-height: 100vh;
+        overflow-x: hidden;
       }
       .tactical-panel {
         background: rgba(26, 34, 51, 0.7); /* base-200 with opacity */
@@ -55,18 +55,29 @@
       }
       /* Custom scrollbar */
       ::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
       }
       ::-webkit-scrollbar-track {
         background: #111827;
       }
       ::-webkit-scrollbar-thumb {
         background: #4b5563;
-        border-radius: 4px;
+        border-radius: 10px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #6b7280;
+        background: #FFBF00;
       }
+
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 191, 0, 0.3);
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 191, 0, 0.6);
+      }
+
        /* Custom range input styles */
       input[type=range] {
         -webkit-appearance: none;
@@ -136,15 +147,16 @@
       .tab-button {
         padding-top: 0.5rem;
         padding-bottom: 0.5rem;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
         border-bottom: 3px solid transparent;
         color: #9ca3af; /* text-secondary */
         display: flex;
         align-items: center;
         transition: all 0.2s ease-in-out;
-        font-size: 0.875rem;
-        font-weight: 500;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
       }
       .tab-button:hover {
         color: #e5e7eb; /* text-main */
@@ -152,6 +164,35 @@
       .tab-button-active {
         color: #FFBF00; /* primary-amber */
         border-bottom-color: #FFBF00;
+      }
+
+      /* Utility for primary buttons */
+      .btn-primary {
+        background-color: #FFBF00;
+        color: #111827;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        border-radius: 0.25rem;
+        transition: all 0.2s;
+      }
+      .btn-primary:hover {
+        background-color: #d4a000;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255, 191, 0, 0.2);
+      }
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+      .btn-secondary {
+        background-color: #2c364a;
+        color: #e5e7eb;
+        border: 1px solid #4b5563;
+        transition: all 0.2s;
+      }
+      .btn-secondary:hover {
+        background-color: #3e4b63;
+        border-color: #FFBF00;
       }
     </style>
   <script type="importmap">
@@ -171,6 +212,6 @@
 </head>
   <body class="bg-base-100 text-text-main font-sans">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="index.tsx"></script>
   </body>
 </html>

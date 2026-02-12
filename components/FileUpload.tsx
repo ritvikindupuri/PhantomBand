@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FileCodeIcon } from './icons/FileCodeIcon';
 import type { FileAnalysisReport } from '../types';
-import { MAX_FILE_SIZE_BYTES } from '../App';
+// Fix: Import MAX_FILE_SIZE_BYTES from constants.ts where it is now defined
+import { MAX_FILE_SIZE_BYTES } from '../constants.ts';
 import { ColumnDetectionError } from '../utils/csvParser';
 
 
