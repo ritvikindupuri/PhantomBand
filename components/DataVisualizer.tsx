@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   ResponsiveContainer,
@@ -26,11 +25,22 @@ interface DataVisualizerProps {
   timeStats: TimeStats | null;
 }
 
-const formatTime = (seconds: number) => {
+const formatRelativeTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
     const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
     const s = Math.floor(seconds % 60).toString().padStart(2, '0');
     return `${h}:${m}:${s}`;
+}
+
+const formatAbsoluteTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+        hour12: true, 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        // Fix: Use 'as any' cast because fractionalSecondDigits is missing from some TypeScript definitions of DateTimeFormatOptions
+        fractionalSecondDigits: 2 
+    } as any);
 }
 
 export const DataVisualizer: React.FC<DataVisualizerProps> = ({
@@ -57,11 +67,19 @@ export const DataVisualizer: React.FC<DataVisualizerProps> = ({
         return visualizerData[currentTimestep]?.spectrum || [];
     }, [visualizerData, currentTimestep]);
 
-    const timestepTimeRange = useMemo(() => {
-        if (!timeStats || totalTimesteps === 0) return null;
+    const timestepTimeLabel = useMemo(() => {
+        if (!timeStats || totalTimesteps === 0) return 'REAL-TIME';
+        
         const durationPerStep = timeStats.durationSeconds / totalTimesteps;
-        const start = currentTimestep * durationPerStep;
-        return `T+${formatTime(start)}`;
+        const relativeOffset = currentTimestep * durationPerStep;
+        
+        // If the start time looks like a real Unix epoch (ms)
+        if (timeStats.start > 1000000000) {
+            const absoluteTimestamp = timeStats.start + (relativeOffset * 1000);
+            return formatAbsoluteTime(absoluteTimestamp);
+        }
+        
+        return `T+${formatRelativeTime(relativeOffset)}`;
     }, [timeStats, currentTimestep, totalTimesteps]);
 
     if (isLoading) {
@@ -85,7 +103,7 @@ export const DataVisualizer: React.FC<DataVisualizerProps> = ({
                     <h2 className="text-sm font-bold text-primary-amber uppercase tracking-[0.2em]">
                         Live Spectrum Feed
                     </h2>
-                    <p className="text-[10px] text-text-secondary mt-1">RECURRENT TEMPORAL ANALYSIS • {timestepTimeRange || 'REAL-TIME'}</p>
+                    <p className="text-[10px] text-text-secondary mt-1 font-mono">RECURRENT TEMPORAL ANALYSIS • <span className="text-text-main">{timestepTimeLabel}</span></p>
                 </div>
                 <div className="flex items-center space-x-2">
                     <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />

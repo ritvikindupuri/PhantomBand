@@ -1,7 +1,7 @@
 # PhantomBand: Technical Specification & Intelligence Architecture
 **By:** Ritvik Indupuri, Owen Gertz, Joshua Gallupudi, Nix
 **Date:** 2/12/2026
-**Document Version:** 9.0 (SIGINT-ULTRA-EXHAUSTIVE)
+**Document Version:** 10.0 (SIGINT-ULTRA-EXHAUSTIVE-EMULATION)
 **Classification:** SENSITIVE / TACTICAL OPERATIONS
 
 ---
@@ -35,7 +35,7 @@ graph TD
 
     subgraph Layer_3_HUD [Intelligence Synthesis & UX]
         C5 --> D1{Anomaly Logic}
-        D1 -->|Metadata| E1[Gemini-3-Flash LLM]
+        D1 -->|Metadata| E1[Gemini-3-Pro LLM]
         D1 -->|SRE Overlay| F1[Waterfall HUD]
         E1 --> G1[Tactical Narrative]
         D1 --> H1[Telemetry Status Bar]
@@ -63,12 +63,6 @@ The ingestion phase follows a strict four-pass algorithmic pipeline to transform
 ### 3.2 Feature: Manual Column Override System
 If the heuristic engine encounters ambiguous headers (e.g., "Channel_A", "Value_1"), it triggers a `ColumnDetectionError`. This activates a UI sub-module allowing the operator to manually select the correct indices. This ensures 100% compatibility with non-standard proprietary log formats.
 
-### 3.3 Feature: Virtual Slicing for High-Capacity Logs
-To maintain browser performance and prevent out-of-memory (OOM) errors, files exceeding 50MB trigger the **Virtual Slicer**. Operators can focus the neural engine on specific mission phases:
-- **Ingress:** Analyzes the first 50MB of the capture.
-- **Mid-Mission:** Analyzes the central 50MB.
-- **Egress:** Analyzes the final 50MB.
-
 ---
 
 ## 4. The ML Engine: Phantom-LSTM Recurrent Autoencoder (Sub-System 2)
@@ -77,17 +71,13 @@ To maintain browser performance and prevent out-of-memory (OOM) errors, files ex
 The engine is a symmetrical Recurrent Autoencoder implemented via `tf.sequential()`:
 - **Encoder (LSTM 128u):** Maps 8 consecutive frames (256 frequency bins each) into a 128-dimensional latent vector. This compresses the temporal rhythm of the background noise.
 - **Latent Bottleneck (RepeatVector):** Replicates the compressed state, stripping away stochastic (random) noise while preserving deterministic (coherent) structures.
-- **Decoder (LSTM 128u):** Reconstructs the 8-frame sequence. The reconstruction represents what the signal *should* look like if only the "standard" environmental physics were present.
+- **Decoder (LSTM 128u):** Reconstructed the 8-frame sequence based on the "Ideal" learned environment.
 
 ### 4.2 Mean Squared Error (MSE) - The Detection Pulse
 The system quantifies anomalies using **Spectral Reconstruction Error (SRE)**:
-$$MSE = \frac{1}{T \cdot F} \sum_{t=1}^{T} \sum_{f=1}^{F} (X_{t,f} - \hat{X}_{t,f})^2$$
-Where $X$ is the input and $\hat{X}$ is the prediction.
+$$MSE = \frac{1}{T \cdot F} \sum_{t=1}^{T} \sum_{f=1}^{F} (X_{t,f} - \hat{X}_{t,f})^2$$.
 - **Anomaly Trigger:** When $MSE > \epsilon$ (where $\epsilon$ is the sensitivity threshold), an anomaly is flagged.
-- **Sensitivity Slider:** The 50-99% slider linearly scales the threshold. At 99% sensitivity, the model triggers on microscopic reconstruction variances ($<10^{-7}$), enabling the detection of signals designed to look like background noise (LPI).
-
-### 4.3 Feature: Neural Memory Management (`tf.tidy`)
-To prevent memory leaks during long-duration analysis, the system wraps all inference loops in `tf.tidy()`. This ensures that intermediate tensors (gradients, MSE matrices) are immediately purged from GPU memory after each timestep.
+- **Sensitivity Slider:** At 99% sensitivity, the model triggers on microscopic variances ($<10^{-7}$), enabling the detection of stealthy Low Probability of Intercept (LPI) signals.
 
 ---
 
@@ -96,29 +86,43 @@ To prevent memory leaks during long-duration analysis, the system wraps all infe
 ### 5.1 Tactical Waterfall Visualizer
 - **FFT Bin Mapping:** Maps the 256 internal bins to absolute MHz values based on the file's detected bounds.
 - **SRE Overlay Zone:** Renders red translucent masks over frequencies where MSE exceeds the threshold, visually correlating mathematical detection with spectral position.
-- **Interactive Temporal Scrubbing:** Allows the operator to scrub through the timeline, updating the spectrum and anomaly overlay in real-time.
+- **Absolute Time Sync:** Uses real dataset timestamps to synchronize the "Live" feed with mission clock $T+0$.
 
 ### 5.2 Gemini-Powered Intelligence Synthesis
-This component translates raw MSE spikes into tactical intelligence narratives.
-1.  **Context Injection:** Feeds the `gemini-3-flash-preview` model a structured `FileAnalysisReport` JSON. This includes min/max frequencies, avg noise floors, and the MSE results.
-2.  **Narrative Synthesis:** Translates reconstruction failures into tactical hypotheses. (e.g., "The recurrent engine detected a reconstruction lag at 2.412GHz; this identifies a frequency-hopping drone control link.")
-3.  **Tactical Countermeasures:** The AI suggests specific actions (e.g., "Initiate reactive jamming at 15 degrees azimuth").
-
-### 5.3 Feature: Tactical Status Bar
-Provides instant situational telemetry:
-- **Intelligence Target:** Displays the current mission goal.
-- **Temporal Depth:** Indicates the LSTM lookback window length.
-- **Data Window:** Shows the total duration of the analyzed spectrum segment in seconds/minutes.
-
-### 5.4 Feature: Persistent Mission History
-The platform utilizes **Persistent localStorage Caching**. All mission parameters, spectrum datasets, and AI narratives are cached locally. This allows for:
-- Session restoration after browser reloads.
-- Comparison between historical missions and live captures.
-- Exporting tactical logs for post-mission briefings.
+This component translates raw MSE spikes into tactical intelligence narratives using `gemini-3-pro-preview`.
+1.  **Context Injection:** Feeds the model a structured `FileAnalysisReport` JSON.
+2.  **Narrative Synthesis:** Translates reconstruction failures into tactical hypotheses.
+3.  **Tactical Countermeasures:** Provides actionable Electronic Warfare advice based on detection classification.
 
 ---
 
-## 6. Conclusion
+## 6. Threat Simulation & Tactical Emulation Physics
+
+PhantomBand doesn't just display static data; it simulates realistic RF threats by mathematically modeling their impact on the learned temporal baseline.
+
+### 6.1 Drone C2 (Command & Control) Link Detection
+*   **Tactical Behavior:** Fast Frequency Hopping Spread Spectrum (FHSS).
+*   **Neural Simulation Mechanism:** The application injects high-power, short-duration Gaussian bursts ($T < 10ms$) across random frequency bins.
+*   **Realistic Impact:** Since these bursts occur faster than the LSTM's learned "environmental drift," they produce a high **Recurrent Reconstruction Delay**. The model identifies these as non-stochastic because they appear and disappear with deterministic timing that violates the background noise's random nature.
+
+### 6.2 GNSS (GPS) Spoofing Analysis
+*   **Tactical Behavior:** Coherent high-power correlation peaks designed to overpower legitimate satellite signals.
+*   **Neural Simulation Mechanism:** Injects a consistent, slightly higher-than-average power spike ($+10$ to $+20$ dBm over noise floor) that exhibits a linear **Doppler Shift** (frequency drift over time).
+*   **Realistic Impact:** The LSTM's `latent bottleneck` identifies this as a "Persistent Foreign Structure." Unlike random noise spikes, the coherent drift of a spoofing signal is mathematically "explainable" but doesn't match the stationary baseline, triggering a high classification confidence.
+
+### 6.3 Wideband Jamming & Denial of Service
+*   **Tactical Behavior:** Raising the noise floor across a large contiguous swath of bandwidth to drown out legitimate traffic.
+*   **Neural Simulation Mechanism:** Injects a "Power Blanket" (Rectangular function) across 30-60% of the bins.
+*   **Realistic Impact:** This causes a **Spectral Flatline** in the LSTM's decoder. The model's reconstruction error spikes globally across the jammed bandwidth because the variance of the bins is significantly reduced compared to the learned stochastic background noise.
+
+### 6.4 LPI (Low Probability of Intercept) Signal Detection
+*   **Tactical Behavior:** Stealthy signals hidden just below or at the noise floor using Spread Spectrum techniques.
+*   **Neural Simulation Mechanism:** Injects ultra-low power signals ($< -100$ dBm) with a **Cyclostationary Pulse** signature.
+*   **Realistic Impact:** Standard FFT visualizers miss these entirely. However, the Phantom-LSTM tracks the **Entropy of the Reconstruction Delta**. Even if the signal is invisible to the eye, the neural engine fails to reconstruct the "texture" of the noise floor perfectly, resulting in a microscopic but persistent MSE spike that the high-sensitivity threshold (95-99%) detects.
+
+---
+
+## 7. Conclusion
 PhantomBand represents the apex of browser-based SIGINT. By combining the lexical precision of its ingestion engine, the temporal sensitivity of a Recurrent LSTM, and the reasoning power of Generative AI, we provide operators with a tool that doesn't just see data—it understands environmental physics.
 
 ---

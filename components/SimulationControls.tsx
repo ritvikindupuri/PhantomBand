@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FileUpload } from './FileUpload.tsx';
 import type { SimulationParams, FileAnalysisReport } from '../types.ts';
 import { DetectionTarget } from '../types.ts';
@@ -42,6 +42,8 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
     analysisReport, 
     analysisError 
 }) => {
+  const [showSensitivityInfo, setShowSensitivityInfo] = useState(false);
+
   const handleChange = <T,>(field: keyof SimulationParams, value: T) => {
     onParamsChange({ ...params, [field]: value });
   };
@@ -99,11 +101,36 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
               <p className="text-[10px] text-text-secondary/50 mt-1 italic">Determines the depth of temporal lookback.</p>
           </div>
 
-          <div className="animate-fade-in">
+          <div className="animate-fade-in relative">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-medium text-text-secondary uppercase tracking-tighter">Detection Sensitivity</label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-sm font-medium text-text-secondary uppercase tracking-tighter">Detection Sensitivity</label>
+                  <div 
+                    className="cursor-help text-text-secondary hover:text-primary-amber transition-colors"
+                    onMouseEnter={() => setShowSensitivityInfo(true)}
+                    onMouseLeave={() => setShowSensitivityInfo(false)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
                 <span className="text-xs font-bold text-primary-amber">{params.sensitivity}%</span>
               </div>
+              
+              {showSensitivityInfo && (
+                <div className="absolute z-50 bottom-full left-0 mb-2 w-full p-3 bg-base-200 border border-primary-amber/30 rounded shadow-xl animate-fade-in text-[10px] leading-relaxed">
+                  <p className="font-bold text-primary-amber mb-1 uppercase">SIGINT Operator Guidance:</p>
+                  <p className="text-text-main mb-2">Calibrates the Mean Squared Error (MSE) threshold of the Phantom-LSTM neural engine.</p>
+                  <ul className="space-y-1 text-text-secondary">
+                    <li>• <span className="text-text-main font-bold">50-70%:</span> Coarse filtering. Detects high-power jamming/denial of service.</li>
+                    <li>• <span className="text-text-main font-bold">70-90%:</span> Standard operational baseline for persistent monitoring.</li>
+                    <li>• <span className="text-text-main font-bold">90-99%:</span> High-fidelity. Detects LPI, stealth, and covert signals hidden near the noise floor.</li>
+                  </ul>
+                  <p className="mt-2 pt-2 border-t border-secondary/20 font-bold text-primary-amber">OPTIMAL SETTING: 85%</p>
+                </div>
+              )}
+
               <input
                   type="range" min="50" max="99"
                   value={params.sensitivity}

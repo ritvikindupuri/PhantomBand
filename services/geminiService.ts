@@ -77,8 +77,9 @@ export const generateDeceptionScenario = async (
     const report: FileAnalysisReport | null = analysisContent ? JSON.parse(analysisContent) : null;
 
     try {
+        // Fix: Use gemini-3-pro-preview for complex reasoning tasks as per guidelines
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-3-pro-preview",
             contents: userPrompt,
             config: {
                 systemInstruction: systemInstruction,
@@ -88,6 +89,7 @@ export const generateDeceptionScenario = async (
             },
         });
         
+        // Fix: Access .text property directly as it is a getter, not a method.
         const result: Omit<AnalysisResult, 'timeStats'> = JSON.parse(response.text || '{}');
 
         if (result.visualizerData && result.visualizerData.length < params.timesteps) {
