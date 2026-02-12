@@ -2,6 +2,13 @@
 
 PhantomBand is a state-of-the-art Signals Intelligence (SIGINT) and Electronic Warfare (EW) analysis platform. It ingests raw Radio Frequency (RF) logs to identify sophisticated threats—such as LPI (Low Probability of Intercept) signals and GNSS spoofing—that bypass traditional threshold-based detection. By operating entirely within the browser, it ensures maximum data sovereignty while providing high-fidelity tactical awareness.
 
+---
+
+### 📑 Documentation
+> **[VIEW EXHAUSTIVE TECHNICAL SPECIFICATION & INTELLIGENCE ARCHITECTURE](./TECHNICAL_DOCUMENTATION.md)**
+
+---
+
 ### The Model: Phantom-LSTM
 At the core of PhantomBand is the **Phantom-LSTM**, a Deep-Temporal Recurrent Autoencoder. Unlike standard FFT analysis which provides static snapshots, this model learns the temporal "physics" of an environment. By training on a baseline of normal environmental noise, it identifies **Spectral Reconstruction Errors (SRE)**. If a signal violates the learned temporal consistency of the background, the model’s reconstruction delta—measured via **Mean Squared Error (MSE)**—spikes, triggering an anomaly detection. This allows for the identification of coherent signals even when they are hidden near the noise floor.
 

@@ -1,7 +1,7 @@
 # PhantomBand: Technical Specification & Intelligence Architecture
 **By:** Ritvik Indupuri, Owen Gertz, Joshua Gallupudi, Nix
 **Date:** 2/12/2026
-**Document Version:** 7.0 (SIGINT-EXHAUSTIVE-RECON-V2)
+**Document Version:** 9.0 (SIGINT-ULTRA-EXHAUSTIVE)
 **Classification:** SENSITIVE / TACTICAL OPERATIONS
 
 ---
@@ -12,20 +12,20 @@ PhantomBand is a high-fidelity Signals Intelligence (SIGINT) and Electronic Warf
 ---
 
 ## 2. System Architecture
-The application is structured as a decentralized, client-side intelligence node. All processing occurs within the operator's local environment to ensure maximum operational security (OPSEC).
+The application is structured as a decentralized, client-side intelligence node. All processing occurs within the operator's local environment to ensure maximum operational security (OPSEC) and data sovereignty.
 
 ### 2.1 Component Architecture Diagram
 
 ```mermaid
 graph TD
-    subgraph Layer_1_Ingestion [Data Acquisition]
+    subgraph Layer_1_Ingestion [Data Acquisition & Normalization]
         A1[Raw Log] --> B1[Lexical Lexer]
         B1 --> B2[Delimiter Entropy Engine]
         B2 --> B3[Regex Unit Stripper]
         B3 --> B4[Spline Interpolator]
     end
 
-    subgraph Layer_2_ML_Core [Phantom-LSTM Core]
+    subgraph Layer_2_ML_Core [Phantom-LSTM Neural Engine]
         B4 --> C1[Sequence Framer]
         C1 --> C2[LSTM Encoder 128u]
         C2 --> C3[Latent RepeatVector]
@@ -33,79 +33,93 @@ graph TD
         C4 --> C5[MSE Loss Matrix]
     end
 
-    subgraph Layer_3_HUD [Intelligence Synthesis]
+    subgraph Layer_3_HUD [Intelligence Synthesis & UX]
         C5 --> D1{Anomaly Logic}
         D1 -->|Metadata| E1[Gemini-3-Flash LLM]
         D1 -->|SRE Overlay| F1[Waterfall HUD]
         E1 --> G1[Tactical Narrative]
+        D1 --> H1[Telemetry Status Bar]
     end
 ```
 
-<p align="center"><i>Figure 1: Internal Logic and Data Flow</i></p>
+<p align="center"><i>Figure 1: Exhaustive Data Flow & Intelligence Pipeline</i></p>
 
 ---
 
-## 3. Data Ingestion & Sanitization
+## 3. Data Ingestion & Sanitization (Sub-System 1)
 
-### 3.1 Advanced Lexical Discovery
-The ingestion phase follows a four-pass algorithmic pipeline:
+### 3.1 Advanced Lexical Discovery Engine
+The ingestion phase follows a strict four-pass algorithmic pipeline to transform unstructured hardware logs into normalized neural tensors:
 
-1.  **Delimiter Entropy Engine:** Instead of hardcoded delimiters, the system tests `,`, `;`, `\t`, and ` ` across a 100-line sample. It calculates the **Variance of Column Counts** ($V_{col}$). The delimiter resulting in $V_{col} \approx 0$ is selected, ensuring reliability across inconsistent hardware logs.
-2.  **Semantic Header Heuristics:** The lexer scans for the **Numeric Transition Point**—the row where float density exceeds 80%. It then uses **Keyword Proximity Analysis** on the preceding row to map column indices to `Freq`, `Power`, and `Time`.
-3.  **Recursive Regex Unit Stripping:** All non-numeric characters (e.g., "dBm", "MHz") are recursively stripped while preserving signs and decimals.
-4.  **Temporal Spline Interpolation:** If timestamps are present, the engine calculates jitter. Any missing packets or dropped frames are filled via **Linear Spline Interpolation** to ensure the LSTM maintains a continuous temporal hidden state.
+1.  **Pass 1: Delimiter Entropy Engine:**
+    Instead of hardcoded delimiters, the system calculates the **Standard Deviation of Column Counts** across a 100-line sample for `,`, `;`, `\t`, and ` `. The candidate resulting in $Var \approx 0$ is selected, ensuring reliability across fragmented hardware logs.
+2.  **Pass 2: Semantic Header Heuristics:**
+    The lexer scans for the **Numeric Transition Point**—the specific row where cell float-density exceeds 80%. It uses **Weighted Keyword Mapping** (e.g., `RSSI`, `dBm`, `MHz`) on the preceding row to automatically map indices for `Frequency`, `Power`, and `Time`.
+3.  **Pass 3: Recursive Regex Unit Stripping:**
+    A specialized regex engine strips non-numeric IANA units (e.g., `dBm`, `GHz`, `mWatts`) while preserving floating-point precision and negative signs. This ensures hardware logs like `-95.4dBm` are cleanly cast to `Float32`.
+4.  **Pass 4: Temporal Spline Interpolation:**
+    If timestamps are detected, the system calculates jitter. Dropped packets are filled via **Linear Spline Interpolation**, which is critical for maintaining the LSTM's hidden state continuity.
+
+### 3.2 Feature: Manual Column Override System
+If the heuristic engine encounters ambiguous headers (e.g., "Channel_A", "Value_1"), it triggers a `ColumnDetectionError`. This activates a UI sub-module allowing the operator to manually select the correct indices. This ensures 100% compatibility with non-standard proprietary log formats.
+
+### 3.3 Feature: Virtual Slicing for High-Capacity Logs
+To maintain browser performance and prevent out-of-memory (OOM) errors, files exceeding 50MB trigger the **Virtual Slicer**. Operators can focus the neural engine on specific mission phases:
+- **Ingress:** Analyzes the first 50MB of the capture.
+- **Mid-Mission:** Analyzes the central 50MB.
+- **Egress:** Analyzes the final 50MB.
 
 ---
 
-## 4. The ML Engine: Phantom-LSTM Recurrent Autoencoder
+## 4. The ML Engine: Phantom-LSTM Recurrent Autoencoder (Sub-System 2)
 
-### 4.2 Model Layer Breakdown
-- **Encoder (LSTM 128u):** Processes 8 consecutive spectrum frames. It compresses 2,048 data points into 128 high-dimensional features, representing the "state" of the environment.
-- **Bottleneck (RepeatVector):** Forces the model to discard stochastic noise and retain only the deterministic structure of the background.
-- **Decoder (LSTM 128u):** Reconstructs the original 8 frames based on the compressed latent representation.
+### 4.1 Neural Architecture Breakdown
+The engine is a symmetrical Recurrent Autoencoder implemented via `tf.sequential()`:
+- **Encoder (LSTM 128u):** Maps 8 consecutive frames (256 frequency bins each) into a 128-dimensional latent vector. This compresses the temporal rhythm of the background noise.
+- **Latent Bottleneck (RepeatVector):** Replicates the compressed state, stripping away stochastic (random) noise while preserving deterministic (coherent) structures.
+- **Decoder (LSTM 128u):** Reconstructs the 8-frame sequence. The reconstruction represents what the signal *should* look like if only the "standard" environmental physics were present.
 
-### 4.3 Detailed Anomaly Detection: Mean Squared Error (MSE)
-The core detection logic relies on the **Spectral Reconstruction Error (SRE)**, quantified by the Mean Squared Error between input $\mathbf{X}$ and reconstruction $\mathbf{\hat{X}}$.
-
-#### 4.3.1 The Mathematical Mechanism
-For every sliding window of 8 frames, the model calculates:
+### 4.2 Mean Squared Error (MSE) - The Detection Pulse
+The system quantifies anomalies using **Spectral Reconstruction Error (SRE)**:
 $$MSE = \frac{1}{T \cdot F} \sum_{t=1}^{T} \sum_{f=1}^{F} (X_{t,f} - \hat{X}_{t,f})^2$$
-Where:
-- $X_{t,f}$ is the observed signal at time $t$ and frequency bin $f$.
-- $\hat{X}_{t,f}$ is the model's prediction of what that bin *should* look like based on the learned environmental baseline.
+Where $X$ is the input and $\hat{X}$ is the prediction.
+- **Anomaly Trigger:** When $MSE > \epsilon$ (where $\epsilon$ is the sensitivity threshold), an anomaly is flagged.
+- **Sensitivity Slider:** The 50-99% slider linearly scales the threshold. At 99% sensitivity, the model triggers on microscopic reconstruction variances ($<10^{-7}$), enabling the detection of signals designed to look like background noise (LPI).
 
-#### 4.3.2 The "Predict-Compare" Workflow
-1.  **Training Phase:** The model trains on the first 100 frames, effectively memorizing the environmental "noise texture."
-2.  **Prediction:** At each step, the Decoder attempts to recreate the input.
-3.  **The Squaring Penalty:** By squaring the delta $(X - \hat{X})^2$, the system exponentially penalizes outliers. This is why it detects signals hidden near the noise floor; while a human sees "randomness," the model sees a "reconstruction failure" because the deterministic signal cannot be explained by the learned noise model.
-4.  **Sensitivity Calibration:** The operator's sensitivity slider (50-99%) linearly scales the MSE threshold. A sensitivity of 99% triggers on microscopic MSE variances ($<10^{-6}$), allowing for detection of ultra-low-power covert transmitters.
+### 4.3 Feature: Neural Memory Management (`tf.tidy`)
+To prevent memory leaks during long-duration analysis, the system wraps all inference loops in `tf.tidy()`. This ensures that intermediate tensors (gradients, MSE matrices) are immediately purged from GPU memory after each timestep.
 
 ---
 
-## 5. Intelligence Features Breakdown (Operator HUD)
+## 5. Intelligence Features Breakdown (Operator HUD - Sub-System 3)
 
 ### 5.1 Tactical Waterfall Visualizer
-The visualizer is a high-density system designed for immediate situational awareness:
-- **FFT Bin Mapping:** Automatically maps the 256 neural bins to the absolute MHz values detected in Pass 1 (Section 3.1).
-- **Dynamic Noise Floor:** Renders a reference line based on the statistical mode of the input data, typically around -95dBm.
-- **SRE Overlay Zone:** Areas with high MSE are painted with red translucent masks. This provides a "heat map" of anomalies, showing exactly where the environment is deviating from its baseline physics.
+- **FFT Bin Mapping:** Maps the 256 internal bins to absolute MHz values based on the file's detected bounds.
+- **SRE Overlay Zone:** Renders red translucent masks over frequencies where MSE exceeds the threshold, visually correlating mathematical detection with spectral position.
+- **Interactive Temporal Scrubbing:** Allows the operator to scrub through the timeline, updating the spectrum and anomaly overlay in real-time.
 
 ### 5.2 Gemini-Powered Intelligence Synthesis
-This component converts mathematical vectors into actionable tactical intelligence.
+This component translates raw MSE spikes into tactical intelligence narratives.
+1.  **Context Injection:** Feeds the `gemini-3-flash-preview` model a structured `FileAnalysisReport` JSON. This includes min/max frequencies, avg noise floors, and the MSE results.
+2.  **Narrative Synthesis:** Translates reconstruction failures into tactical hypotheses. (e.g., "The recurrent engine detected a reconstruction lag at 2.412GHz; this identifies a frequency-hopping drone control link.")
+3.  **Tactical Countermeasures:** The AI suggests specific actions (e.g., "Initiate reactive jamming at 15 degrees azimuth").
 
-1.  **Context Injection (JSON Framework):** The engine provides Gemini-3-Flash with a structured `FileAnalysisReport`. This includes the frequency bounds, average power, and a list of specific MSE spikes detected by the LSTM.
-2.  **Neural SRE Correlation:** The LLM correlates MSE spikes with the user's **Primary Detection Target**. If the target is "Drone C2 Link," the AI looks for reconstruction failures in the 2.4GHz or 5.8GHz bands.
-3.  **Narrative Synthesis:** Gemini produces a narrative separating findings by `## Timestep X`. It uses its internal knowledge of RF protocols to hypothesize modulation types (e.g., "The non-stochastic pulse at 915MHz suggests a LoRa-based telemetry link using frequency hopping, indicated by the temporal reconstruction lag.")
-4.  **Tactical Countermeasures:** Based on the classification, the AI suggests specific EW actions, such as "Initiate reactive jamming at 2.412GHz" or "Deploy directional finding assets to 15 degrees azimuth."
+### 5.3 Feature: Tactical Status Bar
+Provides instant situational telemetry:
+- **Intelligence Target:** Displays the current mission goal.
+- **Temporal Depth:** Indicates the LSTM lookback window length.
+- **Data Window:** Shows the total duration of the analyzed spectrum segment in seconds/minutes.
 
-### 5.3 Operator Control Interface
-- **Temporal Depth (Timesteps):** Controls the lookback window of the LSTM. Higher values allow for the detection of very slow-fading signals.
-- **History Management:** Locally caches session parameters and results in `localStorage`, allowing for mission playback without re-ingesting raw data.
+### 5.4 Feature: Persistent Mission History
+The platform utilizes **Persistent localStorage Caching**. All mission parameters, spectrum datasets, and AI narratives are cached locally. This allows for:
+- Session restoration after browser reloads.
+- Comparison between historical missions and live captures.
+- Exporting tactical logs for post-mission briefings.
 
 ---
 
 ## 6. Conclusion
-PhantomBand represents the apex of browser-based SIGINT. By combining the lexical precision of a custom parser, the temporal memory of an LSTM, and the reasoning power of Generative AI, we have created a platform that doesn't just display data—it understands environmental physics.
+PhantomBand represents the apex of browser-based SIGINT. By combining the lexical precision of its ingestion engine, the temporal sensitivity of a Recurrent LSTM, and the reasoning power of Generative AI, we provide operators with a tool that doesn't just see data—it understands environmental physics.
 
 ---
 **END OF DOCUMENT**
