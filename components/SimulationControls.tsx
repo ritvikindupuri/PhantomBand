@@ -52,7 +52,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
     <div className="space-y-6">
       <div className="bg-primary-amber/10 border border-primary-amber/30 p-3 rounded-md mb-2">
         <p className="text-[10px] text-primary-amber font-bold uppercase tracking-widest">Operation Mode</p>
-        <p className="text-xs text-text-main font-semibold">PHANTOM-LSTM ANOMALY DETECTION</p>
+        <p className="text-xs text-text-main font-semibold">DUAL-ENGINE ANOMALY DETECTION</p>
       </div>
 
       <FileUpload 
@@ -121,7 +121,7 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
               {showSensitivityInfo && (
                 <div className="absolute z-50 bottom-full left-0 mb-2 w-full p-3 bg-base-200 border border-primary-amber/30 rounded shadow-xl animate-fade-in text-[10px] leading-relaxed">
                   <p className="font-bold text-primary-amber mb-1 uppercase">SIGINT Operator Guidance:</p>
-                  <p className="text-text-main mb-2">Calibrates the Mean Squared Error (MSE) threshold of the Phantom-LSTM neural engine.</p>
+                  <p className="text-text-main mb-2">Calibrates the detection thresholds for both the Phantom-LSTM neural engine and Specter-IF statistical engine.</p>
                   <ul className="space-y-1 text-text-secondary">
                     <li>• <span className="text-text-main font-bold">50-70%:</span> Coarse filtering. Detects high-power jamming/denial of service.</li>
                     <li>• <span className="text-text-main font-bold">70-90%:</span> Standard operational baseline for persistent monitoring.</li>
@@ -137,7 +137,9 @@ export const SimulationControls: React.FC<SimulationControlsProps> = ({
                   onChange={(e) => handleChange('sensitivity', parseInt(e.target.value, 10))}
                   className="w-full"
               />
-              <p className="text-[10px] text-text-secondary/50 mt-1 italic">Calibrates the LSTM reconstruction error threshold.</p>
+              <p className="text-[10px] text-text-secondary/50 mt-1 italic">
+                Calibrates the sensitivity of the dual-engine detection system.
+              </p>
           </div>
       </fieldset>
     </div>

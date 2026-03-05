@@ -12,7 +12,7 @@ export enum DetectionTarget {
 export interface SimulationParams {
   detectionTarget: DetectionTarget;
   timesteps: number;
-  sensitivity: number; // 0-100 scale for LSTM reconstruction threshold
+  sensitivity: number; // 0-100 scale for LSTM reconstruction threshold or IF score
   customPrompt?: string;
 }
 

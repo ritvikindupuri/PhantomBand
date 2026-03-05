@@ -1,12 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FileCodeIcon } from './icons/FileCodeIcon';
 import type { FileAnalysisReport } from '../types';
-// Fix: Import MAX_FILE_SIZE_BYTES from constants.ts where it is now defined
 import { MAX_FILE_SIZE_BYTES } from '../constants.ts';
 import { ColumnDetectionError } from '../utils/csvParser';
-
-
-type Segment = 'start' | 'middle' | 'end';
 
 interface ParseOptions {
     manualFreqIndex?: number;
@@ -22,10 +18,13 @@ interface FileUploadProps {
   analysisError: Error | string | null;
 }
 
-const ReportStat: React.FC<{ label: string, value: string | number }> = ({ label, value }) => (
-    <div className="flex justify-between items-baseline">
-        <p className="text-text-secondary">{label}:</p>
-        <p className="font-semibold text-text-main">{value}</p>
+const StatBox: React.FC<{ label: string, value: string | number, sub?: string, color?: string }> = ({ label, value, sub, color = 'text-text-main' }) => (
+    <div className="bg-base-300/40 p-3 rounded border border-secondary/10 flex flex-col justify-between">
+        <p className="text-[9px] text-text-secondary uppercase font-black tracking-widest mb-1">{label}</p>
+        <div>
+            <p className={`text-sm font-bold font-mono ${color}`}>{value}</p>
+            {sub && <p className="text-[8px] text-text-secondary/60 uppercase font-bold">{sub}</p>}
+        </div>
     </div>
 );
 
@@ -37,9 +36,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileChange, onRunFileA
   const [manualPowerIndex, setManualPowerIndex] = useState<number | string>('');
   const [manualTimeIndex, setManualTimeIndex] = useState<number | string>('');
 
-
   useEffect(() => {
-    // When a new file is uploaded or the error is cleared, reset manual selection
     if (!analysisError || !uploadedFile) {
         setManualFreqIndex('');
         setManualPowerIndex('');
@@ -62,25 +59,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileChange, onRunFileA
     const file = event.target.files ? event.target.files[0] : null;
     onFileChange(file);
   };
-  
-  const handleAnalyzeSegment = (segment: Segment) => {
-    if (!uploadedFile) return;
 
-    let start = 0;
-    let end = MAX_FILE_SIZE_BYTES;
-
-    if (segment === 'middle') {
-        start = Math.max(0, Math.floor(uploadedFile.size / 2) - (MAX_FILE_SIZE_BYTES / 2));
-        end = start + MAX_FILE_SIZE_BYTES;
-    } else if (segment === 'end') {
-        start = Math.max(0, uploadedFile.size - MAX_FILE_SIZE_BYTES);
-        end = uploadedFile.size;
-    }
-    
-    const fileSlice = uploadedFile.slice(start, end);
-    const slicedFile = new File([fileSlice], `${uploadedFile.name} [${segment}]`, { type: uploadedFile.type });
-    onRunFileAnalysis(slicedFile);
-  };
+  const handleClearFile = (e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    onFileChange(null);
+    if(fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   const handleConfirmSelection = () => {
     if (uploadedFile && manualFreqIndex !== '' && manualPowerIndex !== '') {
@@ -92,200 +76,91 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileChange, onRunFileA
     }
   };
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragOver(true);
-  };
-  
-  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragOver(false);
-  };
+  const baseClasses = "border border-dashed rounded-md p-4 transition-all duration-300";
+  const idleClasses = "cursor-pointer bg-base-100/50 border-secondary hover:border-primary-amber hover:bg-primary-amber/5";
+  const dragClasses = isDragOver ? 'border-primary-amber scale-105 bg-primary-amber/10' : 'border-secondary';
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragOver(false);
-    const file = event.dataTransfer.files ? event.dataTransfer.files[0] : null;
-    if (file) {
-      onFileChange(file);
-      if (fileInputRef.current) {
-        fileInputRef.current.files = event.dataTransfer.files;
-      }
-    }
-  };
-
-  const handleClick = () => {
-    if (!uploadedFile && !analysisError) {
-        fileInputRef.current?.click();
-    }
-  };
-
-  const handleClearFile = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent click from triggering file input
-    onFileChange(null);
-    if(fileInputRef.current) {
-        fileInputRef.current.value = "";
-    }
-  }
-
-  const baseClasses = "border border-dashed rounded-md p-4 text-center transition-all duration-300";
-  const idleClasses = "cursor-pointer bg-base-100/50 border-secondary";
-  const dragClasses = isDragOver ? 'border-primary-amber scale-105' : 'border-secondary';
-  
   const renderContent = () => {
       if (analysisError instanceof ColumnDetectionError) {
-            const headers = analysisError.headers;
-            const selectedIndices = [manualFreqIndex, manualPowerIndex, manualTimeIndex].filter(i => i !== '').map(Number);
-            const hasDuplicates = new Set(selectedIndices).size !== selectedIndices.length;
-
-            return (
-                <div className={`${baseClasses} border-amber-500/80 text-left animate-fade-in`}>
-                     <div className="flex justify-between items-center mb-3">
-                        <p className="font-semibold text-amber-400 text-sm uppercase">Manual Column Selection</p>
-                        <button onClick={handleClearFile} className="text-xs text-text-secondary hover:text-red-400">&times; Clear</button>
-                    </div>
-                    <p className="text-xs text-text-secondary mb-3">
-                        We couldn't automatically detect all columns. Please select them below.
-                    </p>
-                    <div className="space-y-4">
-                        <div>
-                             <label className="block text-sm font-medium text-text-secondary mb-1">Frequency Column</label>
-                             <select
-                                 value={manualFreqIndex}
-                                 onChange={(e) => setManualFreqIndex(e.target.value)}
-                                 className="w-full bg-base-300 border border-secondary/50 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-amber text-text-main"
-                             >
-                                 <option value="" disabled>Select a column...</option>
-                                 {headers.map((h, i) => <option key={i} value={i}>{h}</option>)}
-                             </select>
-                        </div>
-                         <div>
-                             <label className="block text-sm font-medium text-text-secondary mb-1">Power Column</label>
-                             <select
-                                 value={manualPowerIndex}
-                                 onChange={(e) => setManualPowerIndex(e.target.value)}
-                                 className="w-full bg-base-300 border border-secondary/50 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-amber text-text-main"
-                             >
-                                  <option value="" disabled>Select a column...</option>
-                                 {headers.map((h, i) => <option key={i} value={i}>{h}</option>)}
-                             </select>
-                        </div>
-                        <div>
-                             <label className="block text-sm font-medium text-text-secondary mb-1">Timestamp Column (Optional)</label>
-                             <select
-                                 value={manualTimeIndex}
-                                 onChange={(e) => setManualTimeIndex(e.target.value)}
-                                 className="w-full bg-base-300 border border-secondary/50 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-amber text-text-main"
-                             >
-                                  <option value="">None</option>
-                                 {headers.map((h, i) => <option key={i} value={i}>{h}</option>)}
-                             </select>
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleConfirmSelection}
-                        disabled={manualFreqIndex === '' || manualPowerIndex === '' || hasDuplicates}
-                        className="btn-primary w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Confirm & Analyze
-                    </button>
-                    {hasDuplicates && (
-                        <p className="text-xs text-center text-red-400 mt-2">Each column selection must be unique.</p>
-                    )}
-                </div>
-            );
-      }
-
-      if (analysisError) {
         return (
-            <div className={`${baseClasses} border-red-500/80 text-left animate-fade-in`}>
-                <div className="flex justify-between items-center mb-3">
-                    <p className="font-semibold text-red-400 text-sm uppercase">File Analysis Error</p>
-                    <button onClick={handleClearFile} className="text-xs text-text-secondary hover:text-red-400">&times; Clear</button>
+            <div className={`${baseClasses} border-amber-500/80 text-left animate-fade-in bg-amber-500/5`}>
+                <div className="flex justify-between items-center mb-4">
+                    <p className="font-bold text-amber-400 text-[10px] uppercase tracking-widest">Manual Emitter Mapping</p>
+                    <button onClick={handleClearFile} className="text-[10px] text-text-secondary hover:text-red-400">&times;</button>
                 </div>
-                <div className="space-y-2 text-xs font-mono bg-red-900/30 p-3 rounded-md text-red-300">
-                    <p>{typeof analysisError === 'string' ? analysisError : analysisError.message}</p>
+                <div className="space-y-3">
+                    <select value={manualFreqIndex} onChange={e => setManualFreqIndex(e.target.value)} className="w-full bg-base-300 text-xs border border-secondary/50 p-2 rounded">
+                        <option value="">Select Frequency Axis...</option>
+                        {analysisError.headers.map((h, i) => <option key={i} value={i}>{i}: {h}</option>)}
+                    </select>
+                    <select value={manualPowerIndex} onChange={e => setManualPowerIndex(e.target.value)} className="w-full bg-base-300 text-xs border border-secondary/50 p-2 rounded">
+                        <option value="">Select Power Amplitude...</option>
+                        {analysisError.headers.map((h, i) => <option key={i} value={i}>{i}: {h}</option>)}
+                    </select>
+                    <button onClick={handleConfirmSelection} className="btn-primary w-full py-2 text-xs">Run Spectral Audit</button>
                 </div>
-                <p className="text-xs text-text-secondary/70 mt-3 text-center">
-                    Please upload a different file or check the file format.
-                </p>
             </div>
         );
       }
-      
+
       if (analysisReport) {
-        return (
-            <div className={`${baseClasses} border-primary-amber text-left animate-fade-in`}>
-                <div className="flex justify-between items-center mb-3">
-                    <p className="font-semibold text-primary-amber text-sm uppercase">Pre-Analysis Report</p>
-                    <button onClick={handleClearFile} className="text-xs text-text-secondary hover:text-red-400">&times; Clear</button>
-                </div>
-                <div className="space-y-2 text-xs font-mono bg-base-300/50 p-3 rounded-md">
-                    <ReportStat label="File" value={analysisReport.fileName} />
-                    {analysisReport.timeStats && <ReportStat label="Duration" value={`${analysisReport.timeStats.durationSeconds.toFixed(1)}s`} />}
-                    <ReportStat label="Rows" value={analysisReport.rowCount.toLocaleString()} />
-                    <ReportStat label="Columns" value={analysisReport.columnCount} />
-                    <hr className="border-secondary/20 my-2" />
-                    <ReportStat label="Freq Range (MHz)" value={`${analysisReport.stats.frequency.min.toFixed(2)} - ${analysisReport.stats.frequency.max.toFixed(2)}`} />
-                    <ReportStat label="Power Range (dBm)" value={`${analysisReport.stats.power.min.toFixed(2)} - ${analysisReport.stats.power.max.toFixed(2)}`} />
-                    <ReportStat label="Avg Power (dBm)" value={analysisReport.stats.power.avg.toFixed(2)} />
-                </div>
-                <p className="text-xs text-text-secondary/70 mt-3 text-center">
-                    A summary of this data will be sent to the AI for analysis.
-                </p>
-            </div>
-        );
-      }
-      
-      if (uploadedFile && isLargeFile) {
-        const fileSizeMB = (uploadedFile.size / 1024 / 1024).toFixed(1);
-        return (
-            <div className={`${baseClasses} border-amber-500/80 text-left animate-fade-in`}>
-                <div className="flex justify-between items-center mb-3">
-                    <p className="font-semibold text-amber-400 text-sm uppercase">Large File Detected</p>
-                    <button onClick={handleClearFile} className="text-xs text-text-secondary hover:text-red-400">&times; Clear</button>
-                </div>
-                <p className="text-xs text-center text-text-secondary mb-3">File size is {fileSizeMB} MB. Please select a 50 MB segment to analyze.</p>
-                <div className="flex flex-col space-y-2">
-                    <button onClick={() => handleAnalyzeSegment('start')} className="btn-secondary text-sm w-full">Analyze First 50 MB (Ingress)</button>
-                    <button onClick={() => handleAnalyzeSegment('middle')} className="btn-secondary text-sm w-full">Analyze Middle 50 MB (Mid-Mission)</button>
-                    <button onClick={() => handleAnalyzeSegment('end')} className="btn-secondary text-sm w-full">Analyze Last 50 MB (Egress)</button>
-                </div>
-            </div>
-        );
+          return (
+              <div className="animate-fade-in space-y-4">
+                  <div className={`${baseClasses} border-primary-amber/30 bg-primary-amber/5 relative`}>
+                      <div className="flex justify-between items-center mb-4">
+                          <div className="flex items-center gap-2">
+                              <div className="h-2 w-2 bg-primary-amber rounded-full animate-pulse" />
+                              <p className="text-[10px] font-black text-primary-amber uppercase tracking-widest">Mission Data Profile</p>
+                          </div>
+                          <button onClick={handleClearFile} className="text-[10px] text-text-secondary hover:text-red-400 font-bold">EJECT</button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                          <StatBox label="Identifier" value={analysisReport.fileName.substring(0, 15)} sub="Source Log" />
+                          <StatBox label="Resolution" value={analysisReport.columnCount} sub="Channels" />
+                          <StatBox label="Payload" value={analysisReport.rowCount.toLocaleString()} sub="Data Points" />
+                          <StatBox label="Duration" value={analysisReport.timeStats ? `${analysisReport.timeStats.durationSeconds.toFixed(1)}s` : 'N/A'} sub="T-Span" />
+                      </div>
+
+                      <div className="mt-2 grid grid-cols-1 gap-2">
+                          <div className="bg-base-300/60 p-3 rounded border border-secondary/10">
+                              <p className="text-[9px] text-text-secondary uppercase font-black tracking-widest mb-1">Spectral Range</p>
+                              <p className="text-[10px] font-mono text-primary-amber">
+                                  {analysisReport.stats.frequency.min.toFixed(2)} - {analysisReport.stats.frequency.max.toFixed(2)} MHz
+                              </p>
+                          </div>
+                          <div className="bg-base-300/60 p-3 rounded border border-secondary/10">
+                              <p className="text-[9px] text-text-secondary uppercase font-black tracking-widest mb-1">Noise Floor / Peak</p>
+                              <div className="flex justify-between font-mono text-[10px]">
+                                  <span className="text-text-secondary">{analysisReport.stats.power.min.toFixed(1)} dBm</span>
+                                  <span className="text-primary-amber font-bold">{analysisReport.stats.power.max.toFixed(1)} dBm</span>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          );
       }
 
       return (
         <div
-            className={`${baseClasses} ${idleClasses} ${dragClasses}`}
-            onClick={handleClick}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            style={{ minHeight: '180px' }}
+            className={`${baseClasses} ${idleClasses} ${dragClasses} flex flex-col items-center justify-center text-center`}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={e => { e.preventDefault(); setIsDragOver(false); onFileChange(e.dataTransfer.files[0]); }}
+            style={{ minHeight: '140px' }}
         >
-            <div className="flex flex-col items-center justify-center space-y-2 text-text-secondary h-full">
-                <FileCodeIcon className="w-8 h-8 mb-1" />
-                <div>
-                <p>
-                    <span className="font-semibold text-primary-amber">UPLOAD FILE</span> or drag & drop
-                </p>
-                <p className="text-xs text-text-secondary/70">.csv & .txt files only</p>
-                </div>
-            </div>
+            <FileCodeIcon className="w-8 h-8 mb-3 opacity-40 text-text-secondary" />
+            <p className="text-[10px] font-black text-primary-amber uppercase tracking-widest">Uplink SIGINT Capture</p>
+            <p className="text-[8px] text-text-secondary/60 uppercase mt-1">.CSV / .TXT / .LOG (50MB MAX)</p>
         </div>
       );
-  };
-  
+  }
+
   return (
     <div>
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChangeInternal}
-        className="hidden"
-        accept=".csv,.txt"
-      />
+      <input type="file" ref={fileInputRef} onChange={handleFileChangeInternal} className="hidden" accept=".csv,.txt,.log" />
       {renderContent()}
     </div>
   );

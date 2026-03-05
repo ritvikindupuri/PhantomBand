@@ -18,7 +18,7 @@ const App: React.FC = () => {
     const [params, setParams] = useState<SimulationParams>(INITIAL_SIMULATION_PARAMS);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [loadingMessage, setLoadingMessage] = useState<string>('PHANTOM-LSTM TRAINING...');
+    const loadingMessage = 'DUAL-ENGINE TRAINING & ANALYZING...';
     const [history, setHistory] = useState<HistoryItem[]>(() => {
         try {
             const savedHistory = localStorage.getItem('phantomBandHistory');
@@ -138,7 +138,11 @@ const App: React.FC = () => {
                                         className="w-full btn-primary flex items-center justify-center space-x-2 py-3 shadow-lg shadow-primary-amber/10 sticky bottom-0 z-10"
                                     >
                                         {isLoading ? <Loader size="sm" /> : null}
-                                        <span className="font-bold tracking-widest">{isLoading ? 'TRAINING...' : 'START SIGINT SCAN'}</span>
+                                        <span className="font-bold tracking-widest">
+                                            {isLoading 
+                                                ? 'TRAINING & ANALYZING...' 
+                                                : 'START SIGINT SCAN'}
+                                        </span>
                                     </button>
                                 </div>
                             )}
